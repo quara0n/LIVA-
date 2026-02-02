@@ -1,0 +1,106 @@
+[
+  {
+    "ovelseId": "kneboy",
+    "navn": "Knebøy",
+    "emoji": "🦵",
+    "alias": ["squat"],
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardProgresjon": ["goblet-kneboy", "front-kneboy", "bulgarsk-split"],
+    "standardRegresjon": ["box-kneboy", "stol-kneboy", "wall-sit"]
+  },
+  {
+    "ovelseId": "goblet-kneboy",
+    "navn": "Goblet knebøy",
+    "emoji": "🏋️",
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardRegresjon": ["kneboy"]
+  },
+  {
+    "ovelseId": "front-kneboy",
+    "navn": "Frontbøy",
+    "emoji": "🏋️",
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"]
+  },
+  {
+    "ovelseId": "bulgarsk-split",
+    "navn": "Bulgarsk splittknebøy",
+    "emoji": "🧍",
+    "tagger": ["balanse"],
+    "anbefaltDoseringstyper": ["reps_x_sett"]
+  },
+  {
+    "ovelseId": "box-kneboy",
+    "navn": "Box-knebøy",
+    "emoji": "🪑",
+    "tagger": ["kontroll"],
+    "anbefaltDoseringstyper": ["reps_x_sett"]
+  },
+  {
+    "ovelseId": "stol-kneboy",
+    "navn": "Stol-knebøy",
+    "emoji": "🪑",
+    "tagger": ["trygg"],
+    "anbefaltDoseringstyper": ["reps_x_sett"]
+  },
+  {
+    "ovelseId": "wall-sit",
+    "navn": "Wall sit",
+    "emoji": "🧱",
+    "tagger": ["isometrisk"],
+    "anbefaltDoseringstyper": ["varighet"]
+  },
+  {
+    "ovelseId": "step-up",
+    "navn": "Step-up",
+    "emoji": "🪜",
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardProgresjon": ["utfall", "bulgarsk-split"],
+    "standardRegresjon": ["stol-kneboy"]
+  },
+  {
+    "ovelseId": "utfall",
+    "navn": "Utfall",
+    "emoji": "🚶",
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardRegresjon": ["step-up"]
+  },
+  {
+    "ovelseId": "leg-press",
+    "navn": "Leg press",
+    "emoji": "🦿",
+    "tagger": ["maskin"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardRegresjon": ["goblet-kneboy"]
+  },
+  {
+    "ovelseId": "balanse-stand",
+    "navn": "Ettbeins balanse",
+    "emoji": "🧘",
+    "tagger": ["balanse"],
+    "anbefaltDoseringstyper": ["varighet"],
+    "standardProgresjon": ["bulgarsk-split"],
+    "standardRegresjon": ["stol-kneboy"]
+  },
+  {
+    "ovelseId": "straight-leg-raise",
+    "navn": "Straight leg raise",
+    "emoji": "🦵",
+    "tagger": ["aktivering"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardProgresjon": ["quad-set"],
+    "standardRegresjon": ["stol-kneboy"]
+  },
+  {
+    "ovelseId": "quad-set",
+    "navn": "Quad set",
+    "emoji": "⚡",
+    "tagger": ["aktivering"],
+    "anbefaltDoseringstyper": ["varighet"],
+    "standardRegresjon": ["straight-leg-raise"]
+  }
+]

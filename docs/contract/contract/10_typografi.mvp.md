@@ -2,7 +2,7 @@ Kontekst: UX & UI
 
 Les:
 - contract/03_ux_mvp.md
-- contract/08_typografi.mvp.md
+- contract/10_typografi.mvp.md
 
 Oppgave:
 - Forbedre lesbarhet i programkort

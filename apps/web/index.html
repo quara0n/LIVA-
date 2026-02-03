@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LIVA – Programbygger (MVP)</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header class="topbar">
+        <div class="title-block">
+          <h1 id="program-title">Program</h1>
+          <span class="status" id="program-status">Utkast</span>
+        </div>
+        <button id="export-btn" class="primary" disabled>Eksporter PDF</button>
+      </header>
+
+      <main class="layout">
+        <section class="panel program">
+          <div class="panel-header">
+            <h2>Program</h2>
+            <p class="hint">Seksjoner: Hoveddel + Notater til pasient.</p>
+          </div>
+
+          <div class="section" id="section-hoveddel">
+            <div class="section-title">
+              <h3>Hoveddel</h3>
+            </div>
+            <div class="section-body" id="hoveddel-list"></div>
+          </div>
+
+          <div class="section" id="section-notater">
+            <div class="section-title">
+              <h3>Notater til pasient</h3>
+            </div>
+            <div class="section-body">
+              <textarea
+                id="notater-input"
+                rows="6"
+                placeholder="Skriv korte, konkrete instruksjoner..."
+              ></textarea>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel library">
+          <div class="panel-header">
+            <h2>Øvelsesbibliotek</h2>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="Søk etter øvelse, tag eller alias"
+            />
+          </div>
+          <div class="library-grid" id="library-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

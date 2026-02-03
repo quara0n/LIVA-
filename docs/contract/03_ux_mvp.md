@@ -15,3 +15,5 @@ MVP-prinsipper:
 - Programmet er alltid synlig og i sentrum
 - Ingen skjult logikk: det som eksporteres må være eksplisitt redigerbart
 - AI kan ikke “autofylle” uten at bruker ser og godkjenner
+
+Typografi og lesbarhet er låst i 08_typografi.mvp.md.

@@ -1,0 +1,26 @@
+{
+  "programId": "program-001",
+  "tittel": "Kne-rehab uke 1",
+  "status": "utkast",
+  "seksjoner": [
+    {
+      "seksjonId": "seksjon-hoveddel",
+      "type": "hovedovelser",
+      "tittel": "Hoveddel",
+      "aktiv": true,
+      "rekkefolge": 1,
+      "ovelser": []
+    },
+    {
+      "seksjonId": "seksjon-notater",
+      "type": "notater",
+      "tittel": "Notater til pasient",
+      "aktiv": true,
+      "rekkefolge": 2,
+      "seksjonNotat": "",
+      "ovelser": []
+    }
+  ],
+  "opprettetTid": "2026-02-02T19:45:00Z",
+  "oppdatertTid": "2026-02-02T19:45:00Z"
+}

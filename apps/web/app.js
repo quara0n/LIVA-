@@ -9,7 +9,7 @@ const state = {
   search: "",
   ui: {
     expanded: new Set(),
-    altOpen: {},
+    altSectionOpen: new Set(),
     showMore: {},
     altPicker: null,
   },
@@ -100,6 +100,7 @@ function addExercise(master) {
 
   hoveddel.ovelser.push(instans);
   state.ui.expanded.add(instans.ovelseInstansId);
+  state.ui.altSectionOpen.add(instans.ovelseInstansId);
   render();
 }
 
@@ -109,11 +110,7 @@ function removeExercise(instansId) {
     (o) => o.ovelseInstansId !== instansId
   );
   state.ui.expanded.delete(instansId);
-  delete state.ui.altOpen[instansId];
-  delete state.ui.showMore[instansId];
-  if (state.ui.altPicker && state.ui.altPicker.instansId === instansId) {
-    state.ui.altPicker = null;
-  }
+  state.ui.altSectionOpen.delete(instansId);
   render();
 }
 
@@ -152,14 +149,12 @@ function toggleExpanded(instansId) {
   render();
 }
 
-function toggleAltRetning(instansId, retning) {
-  const current = state.ui.altOpen[instansId];
-  if (current === retning) {
-    delete state.ui.altOpen[instansId];
+function toggleAltSection(instansId) {
+  if (state.ui.altSectionOpen.has(instansId)) {
+    state.ui.altSectionOpen.delete(instansId);
   } else {
-    state.ui.altOpen[instansId] = retning;
+    state.ui.altSectionOpen.add(instansId);
   }
-  state.ui.altPicker = null;
   render();
 }
 
@@ -230,7 +225,6 @@ function saveAltPicker() {
   });
 
   state.ui.altPicker = null;
-  delete state.ui.altOpen[instans.ovelseInstansId];
   render();
 }
 
@@ -238,7 +232,6 @@ function renderAlternativer(instans, master, retning, label) {
   const slugs = retning === "progresjon" ? master.standardProgresjon || [] : master.standardRegresjon || [];
   const showMore = state.ui.showMore[instans.ovelseInstansId]?.[retning] || false;
   const visible = showMore ? slugs : slugs.slice(0, 3);
-  const hasMore = slugs.length > 3;
 
   const existingCount = (instans.alternativer || []).filter(
     (a) => a.retning === retning
@@ -272,11 +265,9 @@ function renderAlternativer(instans, master, retning, label) {
     <div class="alt-section">
       <div class="alt-header">
         <strong>${label}</strong>
-        ${hasMore ? `
-          <button class="action-btn" data-action="toggle-more" data-instans-id="${instans.ovelseInstansId}" data-retning="${retning}">
-            ${showMore ? "Vis færre" : "Vis flere"}
-          </button>
-        ` : ""}
+        <button class="action-btn" data-action="toggle-more" data-instans-id="${instans.ovelseInstansId}" data-retning="${retning}">
+          ${showMore ? "Vis færre" : "Vis flere"}
+        </button>
       </div>
       <div class="alt-list">
         ${list || `<span class="tag">Ingen foreslåtte alternativer.</span>`}
@@ -293,7 +284,6 @@ function renderAltPickerControls(instansId) {
   const egendefinertVisible = preset === "Egendefinert";
 
   return `
-    <span class="alt-label">Når brukes</span>
     <select class="select" data-action="alt-preset">
       <option${preset === "Når smerte og funksjon er akseptabel" ? " selected" : ""}>Når smerte og funksjon er akseptabel</option>
       <option${preset === "Når øvelsen kjennes lett og kontrollert" ? " selected" : ""}>Når øvelsen kjennes lett og kontrollert</option>
@@ -316,8 +306,7 @@ function renderProgram() {
       const master = getMasterById(instans.ovelseId);
       const emoji = master?.emoji || "🏃";
       const expanded = state.ui.expanded.has(instans.ovelseInstansId);
-      const altOpen = state.ui.altOpen[instans.ovelseInstansId];
-      const altLabel = altOpen === "progresjon" ? "Progresjon" : "Regresjon";
+      const altOpen = state.ui.altSectionOpen.has(instans.ovelseInstansId);
 
       const altSelected = (instans.alternativer || [])
         .map(
@@ -352,15 +341,13 @@ function renderProgram() {
             <div class="expand">
               <div class="alt-header">
                 <strong>Alternativer</strong>
-                <div class="alt-triggers">
-                  <button class="inline-trigger${altOpen === "progresjon" ? " is-active" : ""}" data-action="toggle-retning" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon" aria-pressed="${altOpen === "progresjon"}">+ Progresjon</button>
-                  <button class="inline-trigger${altOpen === "regresjon" ? " is-active" : ""}" data-action="toggle-retning" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon" aria-pressed="${altOpen === "regresjon"}">− Regresjon</button>
-                </div>
+                <button class="action-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}">${altOpen ? "Skjul" : "Vis"}</button>
               </div>
               ${altOpen ? `
-                ${renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, altOpen, altLabel)}
+                ${renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "progresjon", "Progresjon")}
+                ${renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "regresjon", "Regresjon")}
+                ${altSelected ? `<div class="alt-section"><strong>Valgte alternativer</strong><div class="alt-list">${altSelected}</div></div>` : ""}
               ` : ""}
-              ${altSelected ? `<div class="alt-section"><strong>Valgte alternativer</strong><div class="alt-list">${altSelected}</div></div>` : ""}
             </div>
           ` : ""}
         </div>
@@ -459,7 +446,7 @@ hoveddelListEl.addEventListener("click", (event) => {
   if (action === "move-up") moveExercise(instansId, -1);
   if (action === "move-down") moveExercise(instansId, 1);
   if (action === "toggle-expand") toggleExpanded(instansId);
-  if (action === "toggle-retning") toggleAltRetning(instansId, target.dataset.retning);
+  if (action === "toggle-alt") toggleAltSection(instansId);
   if (action === "toggle-more") toggleShowMore(instansId, target.dataset.retning);
   if (action === "add-alt") openAltPicker(instansId, target.dataset.retning, target.dataset.altId);
   if (action === "alt-cancel") cancelAltPicker();

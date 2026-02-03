@@ -202,11 +202,6 @@ body {
   font-size: 12px;
 }
 
-.action-btn.is-active {
-  background: #f3efe8;
-  border-color: #d5cfc6;
-}
-
 .action-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -226,28 +221,6 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-}
-
-.alt-triggers {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.inline-trigger {
-  border: 1px solid var(--border);
-  background: #fff6ef;
-  color: #7d3a12;
-  padding: 6px 10px;
-  border-radius: 999px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.inline-trigger.is-active {
-  background: #ffe2cf;
-  border-color: #f2b28c;
 }
 
 .alt-list {
@@ -279,12 +252,6 @@ body {
   gap: 6px;
   align-items: center;
   flex-wrap: wrap;
-}
-
-.alt-label {
-  font-size: 12px;
-  color: var(--muted);
-  font-weight: 600;
 }
 
 .select {

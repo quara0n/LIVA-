@@ -67,6 +67,8 @@ export function lagNyOvelseInstans(
     ovelseInstansId: ovelseInstansId ?? lagOvelseInstansId(master.ovelseId),
     ovelseId: master.ovelseId,
     navn: master.navn,
+    utforelse: master.utforelseTekst,
+    ikon: master.ikon,
     dosering,
     alternativer: [],
   };

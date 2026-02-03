@@ -1,3 +1,5 @@
+import { renderProgramPdf } from "../../src/pdf/render.js";
+
 const DATA_PATHS = {
   program: "../../src/data/program.seed.json",
   library: "../../src/data/ovelsesbibliotek.seed.json",
@@ -9,7 +11,7 @@ const state = {
   search: "",
   ui: {
     expanded: new Set(),
-    altSectionOpen: new Set(),
+    altSectionOpen: {},
     showMore: {},
     altPicker: null,
   },
@@ -78,6 +80,20 @@ function matchesSearch(item, query) {
   return haystack.includes(query);
 }
 
+function finnOvelserUtenUtforelse(program) {
+  if (!program || !program.seksjoner) return [];
+  const mangler = [];
+  for (const seksjon of program.seksjoner) {
+    if (!seksjon.aktiv) continue;
+    for (const ovelse of seksjon.ovelser || []) {
+      if (!ovelse || !String(ovelse.utforelse || "").trim()) {
+        mangler.push(ovelse?.navn || "(ukjent)");
+      }
+    }
+  }
+  return mangler;
+}
+
 function addExercise(master) {
   const hoveddel = getHoveddelSection();
   if (isInProgram(master.ovelseId)) {
@@ -89,6 +105,7 @@ function addExercise(master) {
     ovelseInstansId: makeId("instans"),
     ovelseId: master.ovelseId,
     navn: master.navn,
+    utforelse: master.utforelseTekst,
     dosering: {
       doseringstype: "reps_x_sett",
       reps: 10,
@@ -100,7 +117,6 @@ function addExercise(master) {
 
   hoveddel.ovelser.push(instans);
   state.ui.expanded.add(instans.ovelseInstansId);
-  state.ui.altSectionOpen.add(instans.ovelseInstansId);
   render();
 }
 
@@ -110,7 +126,7 @@ function removeExercise(instansId) {
     (o) => o.ovelseInstansId !== instansId
   );
   state.ui.expanded.delete(instansId);
-  state.ui.altSectionOpen.delete(instansId);
+  delete state.ui.altSectionOpen[instansId];
   render();
 }
 
@@ -149,12 +165,10 @@ function toggleExpanded(instansId) {
   render();
 }
 
-function toggleAltSection(instansId) {
-  if (state.ui.altSectionOpen.has(instansId)) {
-    state.ui.altSectionOpen.delete(instansId);
-  } else {
-    state.ui.altSectionOpen.add(instansId);
-  }
+function toggleAltSection(instansId, retning) {
+  if (!retning) return;
+  state.ui.altSectionOpen[instansId] =
+    state.ui.altSectionOpen[instansId] === retning ? null : retning;
   render();
 }
 
@@ -225,13 +239,16 @@ function saveAltPicker() {
   });
 
   state.ui.altPicker = null;
+  state.ui.altSectionOpen[picker.instansId] = null;
   render();
 }
 
 function renderAlternativer(instans, master, retning, label) {
   const slugs = retning === "progresjon" ? master.standardProgresjon || [] : master.standardRegresjon || [];
-  const showMore = state.ui.showMore[instans.ovelseInstansId]?.[retning] || false;
+  const showMore =
+    state.ui.showMore[instans.ovelseInstansId]?.[retning] || false;
   const visible = showMore ? slugs : slugs.slice(0, 3);
+  const hasMoreToggle = slugs.length > 3;
 
   const existingCount = (instans.alternativer || []).filter(
     (a) => a.retning === retning
@@ -265,9 +282,11 @@ function renderAlternativer(instans, master, retning, label) {
     <div class="alt-section">
       <div class="alt-header">
         <strong>${label}</strong>
-        <button class="action-btn" data-action="toggle-more" data-instans-id="${instans.ovelseInstansId}" data-retning="${retning}">
-          ${showMore ? "Vis færre" : "Vis flere"}
-        </button>
+        ${hasMoreToggle ? `
+          <button class="action-btn" data-action="toggle-more" data-instans-id="${instans.ovelseInstansId}" data-retning="${retning}">
+            ${showMore ? "Vis færre" : "Vis flere"}
+          </button>
+        ` : ""}
       </div>
       <div class="alt-list">
         ${list || `<span class="tag">Ingen foreslåtte alternativer.</span>`}
@@ -306,7 +325,7 @@ function renderProgram() {
       const master = getMasterById(instans.ovelseId);
       const emoji = master?.emoji || "🏃";
       const expanded = state.ui.expanded.has(instans.ovelseInstansId);
-      const altOpen = state.ui.altSectionOpen.has(instans.ovelseInstansId);
+      const altOpen = state.ui.altSectionOpen[instans.ovelseInstansId] || null;
 
       const altSelected = (instans.alternativer || [])
         .map(
@@ -339,15 +358,18 @@ function renderProgram() {
           </div>
           ${expanded ? `
             <div class="expand">
-              <div class="alt-header">
+              <div class="alt-inline">
                 <strong>Alternativer</strong>
-                <button class="action-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}">${altOpen ? "Skjul" : "Vis"}</button>
+                <div class="alt-inline-actions">
+                  <button class="action-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon">+ Progresjon</button>
+                  <button class="action-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon">− Regresjon</button>
+                </div>
               </div>
               ${altOpen ? `
-                ${renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "progresjon", "Progresjon")}
-                ${renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "regresjon", "Regresjon")}
-                ${altSelected ? `<div class="alt-section"><strong>Valgte alternativer</strong><div class="alt-list">${altSelected}</div></div>` : ""}
+                ${altOpen === "progresjon" ? renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "progresjon", "Progresjon") : ""}
+                ${altOpen === "regresjon" ? renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "regresjon", "Regresjon") : ""}
               ` : ""}
+              ${altSelected ? `<div class="alt-section"><strong>Valgte alternativer</strong><div class="alt-list">${altSelected}</div></div>` : ""}
             </div>
           ` : ""}
         </div>
@@ -384,13 +406,26 @@ function render() {
     state.program.status === "klar" ? "Klar" : "Utkast";
 
   const hoveddel = getHoveddelSection();
-  exportBtn.disabled = !hoveddel || hoveddel.ovelser.length === 0;
+  const manglerUtforelse = finnOvelserUtenUtforelse(state.program);
+  exportBtn.disabled =
+    !hoveddel || hoveddel.ovelser.length === 0 || manglerUtforelse.length > 0;
 
   const notater = getNotaterSection();
   notaterInputEl.value = notater?.seksjonNotat || "";
 
   renderProgram();
   renderLibrary();
+}
+
+function downloadBlob(blob, filename) {
+  const link = document.createElement("a");
+  const url = URL.createObjectURL(blob);
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
 }
 
 async function loadSeeds() {
@@ -422,6 +457,21 @@ searchInputEl.addEventListener("input", (event) => {
   renderLibrary();
 });
 
+exportBtn.addEventListener("click", () => {
+  const mangler = finnOvelserUtenUtforelse(state.program);
+  if (mangler.length > 0) {
+    showToast("Eksport stoppet: utførelse mangler på én eller flere øvelser.");
+    return;
+  }
+  const tittel = (state.program?.tittel || "program")
+    .toLowerCase()
+    .replace(/[^a-z0-9\-]+/gi, "-")
+    .replace(/(^-|-$)+/g, "")
+    .slice(0, 48);
+  const blob = renderProgramPdf(state.program);
+  downloadBlob(blob, `${tittel || "program"}.pdf`);
+});
+
 notaterInputEl.addEventListener("input", (event) => {
   const notater = getNotaterSection();
   if (!notater) return;
@@ -446,7 +496,7 @@ hoveddelListEl.addEventListener("click", (event) => {
   if (action === "move-up") moveExercise(instansId, -1);
   if (action === "move-down") moveExercise(instansId, 1);
   if (action === "toggle-expand") toggleExpanded(instansId);
-  if (action === "toggle-alt") toggleAltSection(instansId);
+  if (action === "toggle-alt") toggleAltSection(instansId, target.dataset.retning);
   if (action === "toggle-more") toggleShowMore(instansId, target.dataset.retning);
   if (action === "add-alt") openAltPicker(instansId, target.dataset.retning, target.dataset.altId);
   if (action === "alt-cancel") cancelAltPicker();

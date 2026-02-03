@@ -11,6 +11,7 @@ Domene-objekter (minimum):
 
 - OvelseMaster (bibliotek):
   - ovelseId, navn
+  - utforelseTekst
   - standardProgresjon?: Slug[]
   - standardRegresjon?: Slug[]
 
@@ -18,6 +19,7 @@ Domene-objekter (minimum):
   - ovelseInstansId
   - ovelseId
   - navn (snapshot for eksport)
+  - utforelse (snapshot for eksport)
   - dosering: Dosering
   - alternativer?: OvelseAlternativ[]
 

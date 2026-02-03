@@ -9,3 +9,9 @@ Progresjon/regresjon – MVP:
 - Maks 3 progresjoner + 3 regresjoner per øvelse
 - Alternativer er ikke egne øvelser
 - Alt valgt innhold skal med i PDF, nedenfor hovedøvelsen
+
+Komprimer progresjon/regresjon i UI slik dokumentet beskriver
+
+- Ikke vis alternativer automatisk
+- Implementer inline-trigger + automatisk kollaps
+- Sørg for at PDF-data følger kontrakten

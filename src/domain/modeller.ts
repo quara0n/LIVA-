@@ -22,6 +22,8 @@ export type ISODateTime = string;
 export interface OvelseMaster {
   ovelseId: Slug; // f.eks. "kneboy"
   navn: string;
+  utforelseTekst: string;
+  ikon?: string;
   alias?: string[];
   tagger?: string[];
   anbefaltDoseringstyper: Doseringstype[];
@@ -65,6 +67,8 @@ export interface OvelseInstans {
   ovelseInstansId: Slug;
   ovelseId: Slug; // peker til OvelseMaster
   navn: string;   // snapshot for PDF
+  utforelse: string; // snapshot for PDF
+  ikon?: string; // snapshot for PDF
   dosering: Dosering;
 
   kommentar?: string;

@@ -38,6 +38,11 @@ function pushWrapped(target, text, maxLen) {
   for (const line of wrapped) target.push(line);
 }
 
+function pushWrappedPrefixed(target, text, maxLen, prefix) {
+  const wrapped = wrapLine(text, maxLen);
+  for (const line of wrapped) target.push(`${prefix}${line}`);
+}
+
 function formatDosering(dosering) {
   if (!dosering || !dosering.doseringstype) return "Ukjent";
   if (dosering.doseringstype === "reps_x_sett") {
@@ -52,6 +57,12 @@ function formatDosering(dosering) {
   }
   return "Ukjent";
 }
+
+const LINE_MAX = 90;
+const PAGE_MAX_LINES = 48;
+const BLOCK_SEPARATOR = "------------------------------------------------------------";
+const CHILD_SEPARATOR = "----------------------------------------";
+const CHILD_INDENT = "  ";
 
 export function buildPdfModel(program) {
   const seksjoner = (program?.seksjoner || []).filter((s) => s.aktiv);
@@ -70,6 +81,7 @@ export function buildPdfModel(program) {
         alternativer: (o.alternativer || []).map((a) => ({
           retning: a.retning,
           navn: a.navn,
+          ikon: a.ikon,
           utforelse: a.utforelse,
           dosering: a.dosering,
           narBrukesPreset: a.narBrukesPreset,
@@ -80,80 +92,143 @@ export function buildPdfModel(program) {
   };
 }
 
-function buildLines(model) {
+function formatTitleLine(navn, ikon) {
+  return ikon ? `${ikon} ${navn}` : navn;
+}
+
+function buildNarBrukesText(alt) {
+  if (!alt) return "";
+  const narBrukes = alt.narBrukesEgendefinertTekst
+    ? `${alt.narBrukesPreset}: ${alt.narBrukesEgendefinertTekst}`
+    : alt.narBrukesPreset;
+  return narBrukes || "";
+}
+
+function buildExerciseBlock(ovelse) {
   const lines = [];
-  pushWrapped(lines, model.tittel, 90);
+  const utforelseText = ovelse.utforelse || "";
+  const wrappedUtf = wrapLine(utforelseText, LINE_MAX - 2);
+
+  lines.push(formatTitleLine(ovelse.navn, ovelse.ikon));
+  lines.push(`Dosering: ${formatDosering(ovelse.dosering)}`);
+  lines.push("Utførelse:");
+  pushWrappedPrefixed(lines, utforelseText, LINE_MAX - 2, "  ");
+  lines.push(" ");
+
+  const alternativer = ovelse.alternativer || [];
+  if (alternativer.length) {
+    const grupper = [
+      { label: "Progresjon", items: alternativer.filter((alt) => alt.retning === "progresjon") },
+      { label: "Regresjon", items: alternativer.filter((alt) => alt.retning === "regresjon") },
+    ];
+
+    for (const gruppe of grupper) {
+      if (!gruppe.items.length) continue;
+      for (const alt of gruppe.items) {
+        const childIcon = alt.ikon || ovelse.ikon;
+        const narBrukesText = buildNarBrukesText(alt);
+        const altText = alt.utforelse || narBrukesText;
+        if (narBrukesText) {
+          lines.push(`${CHILD_INDENT}${gruppe.label}: ${narBrukesText}`);
+        } else {
+          lines.push(`${CHILD_INDENT}${gruppe.label}`);
+        }
+        lines.push(`${CHILD_INDENT}${CHILD_SEPARATOR}`);
+        lines.push(`${CHILD_INDENT}${formatTitleLine(alt.navn, childIcon)}`);
+        lines.push(`${CHILD_INDENT}Dosering: ${formatDosering(alt.dosering)}`);
+        lines.push(`${CHILD_INDENT}Utførelse:`);
+        pushWrappedPrefixed(
+          lines,
+          altText,
+          LINE_MAX - CHILD_INDENT.length - 2,
+          `${CHILD_INDENT}  `
+        );
+        lines.push(" ");
+      }
+    }
+  }
+
+  lines.push(BLOCK_SEPARATOR);
   lines.push("");
+
+  const minLines =
+    1 + // top separator
+    1 + // name
+    1 + // dosering
+    1 + // "Utførelse:"
+    Math.max(1, wrappedUtf.length) + // at least one line of utførelse
+    1; // bottom separator
+
+  return { lines, minLines };
+}
+
+function buildNotaterBlock(seksjon) {
+  const lines = [];
+  if (!seksjon?.seksjonNotat) return { lines, minLines: 0 };
+  lines.push("Notater til pasient");
+  pushWrapped(lines, seksjon.seksjonNotat, LINE_MAX);
+  lines.push("");
+  return { lines, minLines: lines.length };
+}
+
+function buildPages(model) {
+  const headerLines = [];
+  pushWrapped(headerLines, model.tittel, LINE_MAX);
+  headerLines.push("");
+
+  const blocks = [];
 
   for (const seksjon of model.seksjoner) {
     if (seksjon.type === "notater") {
-      if (seksjon.seksjonNotat) {
-        lines.push("Notater til pasient");
-        pushWrapped(lines, seksjon.seksjonNotat, 90);
-        lines.push("");
-      }
+      const notatBlock = buildNotaterBlock(seksjon);
+      if (notatBlock.lines.length) blocks.push(notatBlock);
       continue;
     }
 
     for (const ovelse of seksjon.ovelser) {
-      lines.push(ovelse.ikon ? `${ovelse.ikon} ${ovelse.navn}` : ovelse.navn);
-      pushWrapped(lines, `Utførelse: ${ovelse.utforelse}`, 90);
-      lines.push(`Dosering: ${formatDosering(ovelse.dosering)}`);
-
-      if (ovelse.alternativer && ovelse.alternativer.length > 0) {
-        const progresjoner = ovelse.alternativer.filter((alt) => alt.retning === "progresjon");
-        const regresjoner = ovelse.alternativer.filter((alt) => alt.retning === "regresjon");
-
-        if (progresjoner.length) {
-          lines.push("Valgte progresjoner:");
-          for (const alt of progresjoner) {
-            const narBrukes = alt.narBrukesEgendefinertTekst
-              ? `${alt.narBrukesPreset}: ${alt.narBrukesEgendefinertTekst}`
-              : alt.narBrukesPreset;
-            pushWrapped(lines, `- ${alt.navn} (${narBrukes})`, 90);
-            if (alt.utforelse) {
-              pushWrapped(lines, `  Utførelse: ${alt.utforelse}`, 90);
-            }
-            if (alt.dosering) {
-              lines.push(`  Dosering: ${formatDosering(alt.dosering)}`);
-            }
-          }
-        }
-
-        if (regresjoner.length) {
-          lines.push("Valgte regresjoner:");
-          for (const alt of regresjoner) {
-            const narBrukes = alt.narBrukesEgendefinertTekst
-              ? `${alt.narBrukesPreset}: ${alt.narBrukesEgendefinertTekst}`
-              : alt.narBrukesPreset;
-            pushWrapped(lines, `- ${alt.navn} (${narBrukes})`, 90);
-            if (alt.utforelse) {
-              pushWrapped(lines, `  Utførelse: ${alt.utforelse}`, 90);
-            }
-            if (alt.dosering) {
-              lines.push(`  Dosering: ${formatDosering(alt.dosering)}`);
-            }
-          }
-        }
-      }
-
-      lines.push("");
+      blocks.push(buildExerciseBlock(ovelse));
     }
   }
 
-  return lines;
+  return paginateBlocks(headerLines, blocks, PAGE_MAX_LINES);
 }
 
-function chunkLines(lines, maxLines) {
+function paginateBlocks(headerLines, blocks, maxLines) {
   const pages = [];
-  let current = [];
-  for (const line of lines) {
-    if (current.length >= maxLines) {
-      pages.push(current);
-      current = [];
+  let current = [...headerLines];
+  let remaining = maxLines - current.length;
+
+  const pushPage = () => {
+    pages.push(current);
+    current = [];
+    remaining = maxLines;
+  };
+
+  for (const block of blocks) {
+    if (block.lines.length > maxLines) {
+      if (remaining < block.minLines) {
+        pushPage();
+      }
+      for (const line of block.lines) {
+        if (current.length >= maxLines) {
+          pushPage();
+        }
+        current.push(line);
+        remaining -= 1;
+      }
+      continue;
     }
-    current.push(line);
+
+    if (remaining < block.minLines || remaining < block.lines.length) {
+      pushPage();
+    }
+
+    for (const line of block.lines) {
+      current.push(line);
+      remaining -= 1;
+    }
   }
+
   if (current.length) pages.push(current);
   return pages;
 }
@@ -174,8 +249,7 @@ function buildContentStream(lines) {
 
 export function renderProgramPdf(program) {
   const model = buildPdfModel(program);
-  const lines = buildLines(model);
-  const pages = chunkLines(lines, 48);
+  const pages = buildPages(model);
 
   const objects = [];
   const pageObjects = [];

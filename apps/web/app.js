@@ -13,6 +13,8 @@ const state = {
     altSectionOpen: {},
     showMore: {},
     altPicker: null,
+    detailsOpen: {},
+    sekundar: {},
   },
 };
 
@@ -158,6 +160,19 @@ function toggleAltSection(instansId, retning) {
   state.ui.altSectionOpen[instansId] =
     state.ui.altSectionOpen[instansId] === retning ? null : retning;
   render();
+}
+
+function toggleDetails(instansId) {
+  state.ui.detailsOpen[instansId] = !state.ui.detailsOpen[instansId];
+  render();
+}
+
+function updateSekundar(instansId, field, value) {
+  state.ui.sekundar[instansId] = state.ui.sekundar[instansId] || {
+    vekt: "",
+    pause: "",
+  };
+  state.ui.sekundar[instansId][field] = value;
 }
 
 function toggleShowMore(instansId, retning) {
@@ -319,6 +334,11 @@ function renderProgram() {
       const master = getMasterById(instans.ovelseId);
       const emoji = master?.emoji || "🏃";
       const altOpen = state.ui.altSectionOpen[instans.ovelseInstansId] || null;
+      const detailsOpen = state.ui.detailsOpen[instans.ovelseInstansId] || false;
+      const sekundar = state.ui.sekundar[instans.ovelseInstansId] || {
+        vekt: "",
+        pause: "",
+      };
 
       const altItems = (instans.alternativer || []).map((alt, altIndex) => {
         const narBrukes = `${alt.narBrukesPreset}${alt.narBrukesEgendefinertTekst ? ": " + alt.narBrukesEgendefinertTekst : ""}`;
@@ -351,26 +371,23 @@ function renderProgram() {
             <div class="exercise-title">
               <span class="emoji">${emoji}</span>
               <h4>${instans.navn}</h4>
+              <div class="inline-actions">
+                <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon">+ Progresjon</button>
+                <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon">− Regresjon</button>
+              </div>
             </div>
-            <div class="exercise-meta">
-              <span>Dosering</span>
-              <input class="inline-input" type="number" min="0" value="${instans.dosering.reps || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="reps" />
-              <span>x</span>
-              <input class="inline-input" type="number" min="0" value="${instans.dosering.sett || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="sett" />
-              <span>sett</span>
-              <input class="inline-input wide" placeholder="Kommentar" value="${instans.kommentar || ""}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="kommentar" />
-            </div>
+            <input class="inline-input" type="number" min="0" value="${instans.dosering.reps || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="reps" />
+            <span class="times">×</span>
+            <input class="inline-input" type="number" min="0" value="${instans.dosering.sett || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="sett" />
+            <button class="expand-btn" data-action="toggle-details" data-instans-id="${instans.ovelseInstansId}" aria-expanded="${detailsOpen}">+</button>
+            ${detailsOpen ? `
+              <input class="inline-input compact" placeholder="Vekt" value="${sekundar.vekt}" data-action="edit-sekundar" data-instans-id="${instans.ovelseInstansId}" data-field="vekt" />
+              <input class="inline-input compact" placeholder="Pause" value="${sekundar.pause}" data-action="edit-sekundar" data-instans-id="${instans.ovelseInstansId}" data-field="pause" />
+            ` : ""}
             <div class="actions">
               <button class="action-btn" data-action="move-up" data-instans-id="${instans.ovelseInstansId}" ${index === 0 ? "disabled" : ""}>↑</button>
               <button class="action-btn" data-action="move-down" data-instans-id="${instans.ovelseInstansId}" ${index === hoveddel.ovelser.length - 1 ? "disabled" : ""}>↓</button>
               <button class="action-btn" data-action="remove" data-instans-id="${instans.ovelseInstansId}">Fjern</button>
-            </div>
-          </div>
-          <div class="alt-inline compact">
-            <strong>Progresjon / Regresjon</strong>
-            <div class="alt-inline-actions">
-              <button class="action-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon">+ Progresjon</button>
-              <button class="action-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon">− Regresjon</button>
             </div>
           </div>
           ${altOpen ? `
@@ -509,6 +526,7 @@ hoveddelListEl.addEventListener("click", (event) => {
   if (action === "add-alt") openAltPicker(instansId, target.dataset.retning, target.dataset.altId);
   if (action === "alt-cancel") cancelAltPicker();
   if (action === "alt-save") saveAltPicker();
+  if (action === "toggle-details") toggleDetails(instansId);
 });
 
 hoveddelListEl.addEventListener("change", (event) => {
@@ -535,6 +553,14 @@ hoveddelListEl.addEventListener("input", (event) => {
   if (field === "reps" || field === "sett") {
     alt.dosering[field] = Number(target.value) || 0;
   }
+});
+
+hoveddelListEl.addEventListener("input", (event) => {
+  const target = event.target;
+  if (!target.matches("[data-action='edit-sekundar']")) return;
+  const instansId = target.dataset.instansId;
+  const field = target.dataset.field;
+  updateSekundar(instansId, field, target.value);
 });
 
 hoveddelListEl.addEventListener("input", (event) => {

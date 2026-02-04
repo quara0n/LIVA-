@@ -16,8 +16,8 @@ Redusere visuell støy i programdelen og styrke klinisk lesbarhet uten funksjone
   3. Reps × sett (operativ informasjon)
   4. Et nøytralt “+”-ikon for utvidede parametere
 
-- Avanserte parametere (f.eks. vekt, pause) er skjult som standard og åpnes kun via “+”.
-- Utførelsestekst og kommentarer vises utenfor den komprimerte raden.
+- utvidede parametere (f.eks. vekt, pause) er skjult som standard og åpnes kun via “+” og kommer da opp på samme rad ved siden av reps x sett (operativ informasjon)
+- kommentarer vises etter "+" på samme rad
 
 ## Avgrensninger (MVP)
 
@@ -32,3 +32,10 @@ Redusere visuell støy i programdelen og styrke klinisk lesbarhet uten funksjone
 - Flytte progresjon/regresjon til øvelseslinjen
 - Justere typografisk hierarki
 - Skjule sekundære parametere bak “+”
+
+### Progresjon/Regresjon (MVP)
+
+- I komprimert rad vises progresjon/regresjon som handlinger ( + Progresjon / − Regresjon ) inline ved siden av øvelsesnavn.
+- Ikke vis status/tellere eller tom-tilstander i komprimert visning (f.eks. “Progresjon 0 · Regresjon 0”).
+- Detaljvisning (liste, “når brukes”, valg) er skjult som standard og vises kun etter eksplisitt åpning via inline-trigger.
+- Når detaljvisning er åpen for en øvelse, skal den andre retningen være lukket (kun én retning om gangen).

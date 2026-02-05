@@ -16,10 +16,6 @@
   box-sizing: border-box;
 }
 
-[hidden] {
-  display: none !important;
-}
-
 body {
   margin: 0;
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
@@ -138,3 +134,4 @@ input[type="search"] {
     grid-template-columns: 1fr;
   }
 }
+

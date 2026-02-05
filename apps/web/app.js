@@ -70,9 +70,9 @@ async function loadSeeds() {
     throw new Error("Kunne ikke laste seed-data.");
   }
 
+  const draft = loadDraft();
   state.programTemplate = await programRes.json();
-  state.program = null;
-  state.ui.panelView = "start";
+  state.program = draft || null;
   state.library = await libraryRes.json();
 }
 

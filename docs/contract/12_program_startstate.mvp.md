@@ -1,24 +1,24 @@
-﻿Formal
+Formål
 
-Gi venstre panel en tydelig starttilstand slik at kliniker eksplisitt oppretter et program for redigering.
+Gi venstre panel en tydelig starttilstand slik at kliniker eksplisitt oppretter et program før redigering.
 
 Scope (MVP)
 
-Gjelder kun venstre "Program"-panel sin tomtilstand og oppstart. Ingen redesign av resten av siden.
+Gjelder kun venstre “Program”-panel sin tomtilstand og oppstart. Ingen redesign av resten av siden.
 
-Starttilstand (LAST)
+Starttilstand (LÅST)
 
-Nar det ikke finnes et aktivt program (forste gang / tom state):
+Når det ikke finnes et aktivt program (første gang / tom state):
 
 Venstre panel viser kun:
 
-En primarknapp: "Lag program"
+En primærknapp: “Lag program”
 
-(Valgfritt) en kort hjelpelinje
+(Valgfritt) én kort hjelpelinje
 
-Folgende skal IKKE vises i starttilstand:
+Følgende skal IKKE vises i starttilstand:
 
-ovelsesliste i programmet
+øvelsesliste i programmet
 
 instruksjonsfelt
 
@@ -26,21 +26,21 @@ progresjon/regresjon UI
 
 dosering/redigering
 
-"ingen ovelser lagt til enna"-tekst (den erstattes av starttilstanden)
+“ingen øvelser lagt til ennå”-tekst (den erstattes av starttilstanden)
 
-Opprett program (LAST)
+Opprett program (LÅST)
 
-Nar kliniker trykker "Lag program":
+Når kliniker trykker “Lag program”:
 
 Starttilstanden forsvinner
 
-Programbygger-visningen vises (som i dagens losning)
+Programbygger-visningen vises (som i dagens løsning)
 
-Programmet initialiseres som et "utkast".
+Programmet initialiseres som et “utkast”.
 
-Pasientinfo (LAST)
+Pasientinfo (LÅST)
 
-Nar programbygger-visningen er aktiv, skal det vises en liten "pasientrad" i toppen av programomradet:
+Når programbygger-visningen er aktiv, skal det vises en liten “pasientrad” i toppen av programområdet:
 
 Felt:
 
@@ -54,17 +54,19 @@ Feltene kan editeres inline
 
 E-post er alltid valgfri i MVP
 
-Pasientnavn kan vare tomt under redigering (blokkerer ikke a legge til ovelser)
+Pasientnavn kan være tomt under redigering (blokkerer ikke å legge til øvelser)
 
-Krav til "ma vare fylt ut" knyttes kun til senere steg som sending/arkivering.
+Krav til “må være fylt ut” knyttes kun til senere steg som sending/arkivering.
 
-Persistens / gjenoppretting (LAST)
+Persistens / gjenoppretting (LÅST)
 
-Ingen draft/autosave i denne flyten.
+Aktivt program (inkl pasientnavn/e-post) skal lagres automatisk (draft/autosave).
 
-Ved refresh skal state nullstilles.
+Ved refresh:
 
-Ved refresh vises alltid starttilstand ("Lag program"), uansett hva som var bygget for refresh.
+hvis det finnes lagret program i draft → programbygger vises direkte (ikke starttilstand)
+
+hvis ingen lagret program → starttilstand vises
 
 Forbud (MVP)
 
@@ -76,16 +78,16 @@ Ingen arkiv i denne kontrakten
 
 Ingen e-postsending i denne kontrakten
 
-Ingen redesign av hoyre ovelsesbibliotek eller toppheader
+Ingen redesign av høyre øvelsesbibliotek eller toppheader
 
 Acceptance criteria (testbart)
 
-Tom state -> venstre panel viser kun "Lag program".
+Tom state → venstre panel viser kun “Lag program”.
 
-Klikk "Lag program" -> programbygger vises.
+Klikk “Lag program” → programbygger vises.
 
-Refresh etter opprettelse -> starttilstand vises igjen (state nullstilt).
+Refresh etter opprettelse → programbygger vises igjen (state bevart).
 
-Pasientnavn/e-post persisterer ikke etter refresh.
+Pasientnavn/e-post persisterer etter refresh.
 
 Ingen andre UI-endringer.

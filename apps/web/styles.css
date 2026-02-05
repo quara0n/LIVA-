@@ -16,10 +16,6 @@
   box-sizing: border-box;
 }
 
-[hidden] {
-  display: none !important;
-}
-
 body {
   margin: 0;
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
@@ -116,58 +112,6 @@ body {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 13px;
-}
-
-.startstate {
-  display: grid;
-  gap: 12px;
-  justify-items: center;
-  align-content: center;
-  min-height: calc(70vh - 90px);
-  text-align: center;
-}
-
-.startstate-card {
-  display: grid;
-  gap: 10px;
-  width: min(320px, 100%);
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #fcfbf9;
-}
-
-.startstate-card .primary {
-  width: 100%;
-}
-
-.patient-header {
-  display: grid;
-  gap: 4px;
-  margin-bottom: 14px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-  background: #fcfbf9;
-}
-
-.patient-header div:first-child {
-  font-weight: 600;
-}
-
-.patient-header div:last-child {
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.startstate-card input[type="text"],
-.startstate-card input[type="email"] {
-  width: 100%;
-  border-radius: 12px;
-  border: 1px solid var(--border);
-  padding: 10px 12px;
-  font-size: 14px;
-  font-family: inherit;
 }
 
 .section {

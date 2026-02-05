@@ -1,6 +1,11 @@
 import { renderProgramPdf } from "../../src/pdf/render.js";
 import { createProgramActions } from "./state/program.actions.js";
-import { loadDraft, saveDraft } from "./state/program.storage.js";
+import {
+  loadArchive,
+  saveActiveProgramId,
+  saveArchive,
+  saveDraft,
+} from "./state/program.storage.js";
 import { bindEvents } from "./ui/events.js";
 import { createRenderer } from "./ui/render.js";
 
@@ -12,6 +17,7 @@ const DATA_PATHS = {
 const state = {
   program: null,
   programTemplate: null,
+  archive: [],
   library: [],
   search: "",
   ui: {
@@ -52,6 +58,9 @@ const render = createRenderer({
 
 const actions = createProgramActions({
   state,
+  saveArchive,
+  loadArchive,
+  saveActiveProgramId,
   saveDraft,
   loadDraft,
   render,

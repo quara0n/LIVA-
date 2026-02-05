@@ -14,19 +14,34 @@
 
 .startstate-card {
   display: grid;
-  gap: 10px;
-  width: min(360px, 100%);
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: #fcfbf9;
+  gap: 12px;
+  width: min(420px, 100%);
+  padding: 22px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14);
+  color: var(--ink);
+  font-weight: 500;
 }
 
 .start-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
   flex-wrap: wrap;
   justify-content: center;
+  margin-bottom: 12px;
+}
+
+.startstate-card .start-actions > .primary,
+.startstate-card .start-actions > .action-btn {
+  flex: 1 1 0;
+  min-width: 160px;
+}
+
+.startstate-patient {
+  display: grid;
+  gap: 10px;
 }
 
 .startstate-patient {
@@ -41,19 +56,68 @@
 .startstate-card input[type="text"],
 .startstate-card input[type="email"] {
   width: 100%;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  padding: 10px 12px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.16);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0 16px;
   font-size: 14px;
   font-family: inherit;
+  font-weight: 500;
 }
 
+.startstate-card input[type="text"]::placeholder,
+.startstate-card input[type="email"]::placeholder {
+  color: rgba(0, 0, 0, 0.55);
+}
+
+.startstate-card input[type="text"]:focus,
+.startstate-card input[type="email"]:focus {
+  outline: none;
+  border-color: rgba(255, 138, 61, 0.35);
+  box-shadow: 0 0 0 3px rgba(255, 138, 61, 0.18);
+}
+
+.startstate-card .primary {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.14);
+  background: #ff7f2c;
+}
+
+.startstate-card .primary:hover {
+  background: #f16f1a;
+}
+
+.startstate-card .action-btn {
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 15px;
+  border: 1px solid rgba(255, 122, 36, 0.7);
+  color: rgba(255, 122, 36, 0.95);
+  background: rgba(255, 122, 36, 0.12);
+}
+
+.startstate-card .action-btn:hover {
+  background: rgba(255, 122, 36, 0.18);
+  border-color: rgba(255, 122, 36, 0.85);
+}
 .program-top-controls {
   display: flex;
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
   width: 100%;
+}
+
+.inline-error {
+  font-size: 12px;
+  color: #b42318;
 }
 
 .section-title {
@@ -270,5 +334,33 @@
   border-radius: 8px;
   padding: 6px 8px;
   font-size: 12px;
+}
+
+.archive-card {
+  width: min(520px, 100%);
+}
+
+.archive-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px dashed var(--border);
+}
+
+.archive-row:last-child {
+  border-bottom: none;
+}
+
+.archive-meta {
+  display: grid;
+  gap: 4px;
+}
+
+.archive-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 

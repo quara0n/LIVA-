@@ -1,4 +1,10 @@
-﻿export function createProgramActions({ state, saveDraft, render, showToast }) {
+﻿export function createProgramActions({
+  state,
+  saveDraft,
+  loadDraft,
+  render,
+  showToast,
+}) {
   function makeId(prefix) {
     if (crypto && crypto.randomUUID) {
       return `${prefix}-${crypto.randomUUID()}`;
@@ -319,7 +325,9 @@
   }
 
   function saveProgram() {
-    showToast("Lagring kommer i kontrakt 16.");
+    if (!state.program) return;
+    saveDraft(state.program);
+    showToast("Utkast lagret.");
   }
 
   function startNewProgram() {
@@ -334,7 +342,13 @@
   }
 
   function loadProgram() {
-    showToast("Hent program kommer i kontrakt 16.");
+    const draft = loadDraft();
+    if (!draft) {
+      showToast("Fant ikke et lagret utkast.");
+      return;
+    }
+    state.program = draft;
+    render.full();
   }
 
   function createProgramFromStart(pasientNavn, pasientEpost) {
@@ -378,4 +392,3 @@
     createProgramFromStart,
   };
 }
-

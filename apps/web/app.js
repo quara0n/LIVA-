@@ -63,6 +63,7 @@ const render = createRenderer({
 const actions = createProgramActions({
   state,
   saveDraft,
+  loadDraft,
   render,
   showToast,
 });

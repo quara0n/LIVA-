@@ -1,4 +1,10 @@
-﻿export function createProgramActions({ state, saveDraft, render, showToast }) {
+﻿export function createProgramActions({
+  state,
+  saveDraft,
+  loadDraft,
+  render,
+  showToast,
+}) {
   function makeId(prefix) {
     if (crypto && crypto.randomUUID) {
       return `${prefix}-${crypto.randomUUID()}`;
@@ -312,8 +318,40 @@
     state.ui.altPicker.narBrukesEgendefinertTekst = value;
   }
 
+  function setProgramName(value) {
+    if (!state.program) return;
+    state.program.pasientNavn = value;
+    saveDraft(state.program);
+  }
+
+  function saveProgram() {
+    if (!state.program) return;
+    saveDraft(state.program);
+    showToast("Utkast lagret.");
+  }
+
+  function startNewProgram() {
+    state.ui.altSectionOpen = {};
+    state.ui.showMore = {};
+    state.ui.altPicker = null;
+    state.ui.detailsOpen = {};
+    state.ui.sekundar = {};
+    state.program = createEmptyDraft();
+    saveDraft(state.program);
+    render.full();
+  }
+
+  function loadProgram() {
+    const draft = loadDraft();
+    if (!draft) {
+      showToast("Fant ikke et lagret utkast.");
+      return;
+    }
+    state.program = draft;
+    render.full();
+  }
+
   function createProgramFromStart(pasientNavn, pasientEpost) {
-    if (state.program) return;
     state.program = createEmptyDraft();
     state.program.pasientNavn = (pasientNavn || "").trim();
     state.program.pasientEpost = (pasientEpost || "").trim();
@@ -346,7 +384,10 @@
     updateAltField,
     setSekundar,
     setAltCustom,
+    setProgramName,
+    saveProgram,
+    startNewProgram,
+    loadProgram,
     createProgramFromStart,
   };
 }
-

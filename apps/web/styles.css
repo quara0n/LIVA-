@@ -19,7 +19,12 @@
 body {
   margin: 0;
   font-family: "Space Grotesk", "Segoe UI", sans-serif;
-  background: radial-gradient(circle at top left, #fff6e8 0%, #f7f3ee 50%, #f2efe9 100%);
+  background: radial-gradient(
+    circle at top left,
+    #fff6e8 0%,
+    #f7f3ee 50%,
+    #f2efe9 100%
+  );
   color: var(--ink);
 }
 
@@ -70,7 +75,10 @@ body {
   padding: 12px 20px;
   border-radius: 12px;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    opacity 0.2s ease;
   box-shadow: 0 10px 18px rgba(255, 138, 61, 0.35);
 }
 
@@ -420,7 +428,9 @@ input[type="search"] {
   opacity: 0;
   pointer-events: none;
   transform: translateY(10px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.2s ease;
 }
 
 .toast.show {

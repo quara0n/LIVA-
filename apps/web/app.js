@@ -11,6 +11,7 @@ const DATA_PATHS = {
 
 const state = {
   program: null,
+  programTemplate: null,
   library: [],
   search: "",
   ui: {

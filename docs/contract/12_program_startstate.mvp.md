@@ -1,10 +1,16 @@
 Formål
 
-Gi venstre panel en tydelig starttilstand slik at kliniker eksplisitt oppretter et program før redigering.
+Gi venstre panel en tydelig starttilstand slik at kliniker eksplisitt oppretter eller henter et program før redigering.
 
 Scope (MVP)
 
-Gjelder kun venstre “Program”-panel sin tomtilstand og oppstart. Ingen redesign av resten av siden.
+Gjelder kun venstre “Program”-panel sin tomtilstand, oppstart og programtopp (kontroller når programbygger er aktiv).
+
+Ingen redesign av resten av siden.
+
+Ingen endringer i høyre øvelsesbibliotek eller toppheader.
+
+Arkiv/listing/henting av flere programmer er definert i kontrakt 16 (ikke her).
 
 Starttilstand (LÅST)
 
@@ -12,11 +18,21 @@ Når det ikke finnes et aktivt program (første gang / tom state):
 
 Venstre panel viser kun:
 
-En primærknapp: “Lag program”
+To knapper på samme rad:
 
-(Valgfritt) én kort hjelpelinje
+Primær: “Lag program”
 
-Følgende skal IKKE vises i starttilstand:
+Sekundær: “Hent program”
+
+En “Pasient”-boks rett under knappene med felter:
+
+Pasientnavn (tekst)
+
+E-post (tekst, valgfritt)
+
+(Valgfritt) én kort hjelpelinje under pasientboksen.
+
+Følgende skal IKKE vises i starttilstand
 
 øvelsesliste i programmet
 
@@ -26,41 +42,62 @@ progresjon/regresjon UI
 
 dosering/redigering
 
-“ingen øvelser lagt til ennå”-tekst (den erstattes av starttilstanden)
+“ingen øvelser lagt til ennå”-tekst (erstattes av starttilstanden)
 
-Opprett program (LÅST)
-
-Når kliniker trykker “Lag program”:
+Opprett / hent program (LÅST)
+Når kliniker trykker “Lag program”
 
 Starttilstanden forsvinner
 
 Programbygger-visningen vises (som i dagens løsning)
 
-Programmet initialiseres som et “utkast”.
+Programmet initialiseres som et utkast (draft)
 
-Pasientinfo (LÅST)
+Pasientfelter (navn/e-post) fra starttilstanden overføres til programmet
 
-Når programbygger-visningen er aktiv, skal det vises en liten “pasientrad” i toppen av programområdet:
+Når kliniker trykker “Hent program”
 
-Felt:
+Starttilstanden forsvinner
 
-Pasientnavn (tekst)
+“Hent program”-flyten åpnes i venstre panel (ingen modal, ingen ny side)
 
-E-post (tekst, valgfritt)
+Selve listing/valg/åpning av andre programmer styres av kontrakt 16
 
-Interaksjon:
+Når et program velges i hent-flyten, blir det aktivt og programbygger-visningen vises
 
-Feltene kan editeres inline
+Programtopp (LÅST)
 
-E-post er alltid valgfri i MVP
+Når programbygger-visningen er aktiv, skal det vises en topprad i toppen av programområdet.
 
-Pasientnavn kan være tomt under redigering (blokkerer ikke å legge til øvelser)
+Innhold (rekkefølge fra venstre til høyre)
 
-Krav til “må være fylt ut” knyttes kun til senere steg som sending/arkivering.
+Navn (pasientnavn, inline editable)
+
+Lagre (knapp)
+
+Nytt program (knapp)
+
+Hent program (knapp)
+
+Interaksjon
+
+Navn kan editeres inline
+
+E-post håndteres i kontrakt 16 dersom den skal vises i builder; denne kontrakten låser kun Navn-feltet i programtoppen
+
+“Lagre”, “Nytt program”, “Hent program”:
+
+funksjonell oppførsel defineres av kontrakt 16
+
+denne kontrakten låser at knappene finnes og hvor de ligger
+
+Viktig
+
+Starttilstanden (knapper + pasientboks) skal ikke vises samtidig som programtoppen (builder aktiv).
 
 Persistens / gjenoppretting (LÅST)
 
-Aktivt program (inkl pasientnavn/e-post) skal lagres automatisk (draft/autosave).
+Aktivt program (inkl navn/e-post dersom disse finnes i programdata) skal lagres automatisk (draft/autosave) i MVP.
 
 Ved refresh:
 
@@ -68,26 +105,44 @@ hvis det finnes lagret program i draft → programbygger vises direkte (ikke sta
 
 hvis ingen lagret program → starttilstand vises
 
+Merk: Arkiv, flere programmer og “Hent program”-innhold er definert i kontrakt 16. Denne kontrakten beskriver kun starttilstand + inngangskontroller + programtopp.
+
 Forbud (MVP)
 
 Ingen modaler
 
 Ingen nye sider/route
 
-Ingen arkiv i denne kontrakten
-
-Ingen e-postsending i denne kontrakten
-
 Ingen redesign av høyre øvelsesbibliotek eller toppheader
+
+Ingen “arkivvisning” eller programliste defineres her (kontrakt 16)
 
 Acceptance criteria (testbart)
 
-Tom state → venstre panel viser kun “Lag program”.
+Tom state → venstre panel viser kun:
 
-Klikk “Lag program” → programbygger vises.
+“Lag program” og “Hent program”
 
-Refresh etter opprettelse → programbygger vises igjen (state bevart).
+pasientboks (Navn + E-post)
 
-Pasientnavn/e-post persisterer etter refresh.
+Klikk “Lag program” →
+
+starttilstand forsvinner
+
+programbygger vises
+
+programtopp vises med rekkefølge: Navn | Lagre | Nytt program | Hent program
+
+Klikk “Hent program” i starttilstand →
+
+starttilstand forsvinner
+
+hent-flyt vises i venstre panel (ingen modal / ny side)
+
+Refresh etter at program er opprettet →
+
+programbygger vises igjen (state bevart)
+
+Pasientnavn/e-post persisterer etter refresh (som del av draft)
 
 Ingen andre UI-endringer.

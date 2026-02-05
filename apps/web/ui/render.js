@@ -5,6 +5,8 @@
     helpers = nextHelpers;
   }
 
+  const programRootEl = els.programRootEl;
+
   function renderAltPickerControls(instansId) {
     const picker = state.ui.altPicker;
     if (!picker || picker.instansId !== instansId) return "";
@@ -80,9 +82,9 @@
   `;
   }
 
-  function renderProgram() {
+  function renderProgramItems() {
     const hoveddel = helpers.getHoveddelSection();
-    if (!hoveddel || !els.hoveddelListEl) return;
+    if (!hoveddel) return "";
 
     const items = hoveddel.ovelser
       .map((instans, index) => {
@@ -164,8 +166,7 @@
       })
       .join("");
 
-    els.hoveddelListEl.innerHTML =
-      items || '<p class="hint">Ingen øvelser lagt til ennå.</p>';
+    return items || '<p class="hint">Ingen øvelser lagt til ennå.</p>';
   }
 
   function renderLibrary() {
@@ -188,13 +189,72 @@
       .join("");
   }
 
+  function renderStartState() {
+    return `
+      <div class="program-startstate startstate">
+        <div class="startstate-card">
+          <div class="start-actions">
+            <button class="primary" data-action="create-program">Lag program</button>
+            <button class="action-btn" data-action="load-program">Hent program</button>
+          </div>
+          <input
+            data-field="start-name"
+            type="text"
+            autocomplete="name"
+            placeholder="Pasientnavn (valgfritt)"
+          />
+          <input
+            data-field="start-email"
+            type="email"
+            autocomplete="email"
+            placeholder="E-post (valgfritt)"
+          />
+          <p class="hint">Opprett eller hent program før redigering.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderBuilder() {
+    return `
+      <div class="program-canvas">
+        <div class="panel-header program-header">
+          <div class="program-top-controls">
+            <input
+              class="inline-input wide"
+              data-action="edit-program-name"
+              type="text"
+              placeholder="Navn"
+            />
+            <button class="action-btn" data-action="save-program">Lagre</button>
+            <button class="action-btn" data-action="start-new-program">Nytt program</button>
+            <button class="action-btn" data-action="load-program">Hent program</button>
+          </div>
+        </div>
+
+        <div class="section" id="section-hoveddel">
+          <div class="section-body exercise-list" id="hoveddel-list">
+            ${renderProgramItems()}
+          </div>
+        </div>
+
+        <div class="section" id="section-notater">
+          <div class="section-body">
+            <textarea
+              data-action="edit-notater"
+              rows="6"
+              placeholder="Skriv korte, konkrete instruksjoner..."
+            ></textarea>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function full() {
     const hasDraft = Boolean(state.program);
-    if (els.programStartStateEl) {
-      els.programStartStateEl.hidden = hasDraft;
-    }
-    if (els.programBuilderEl) {
-      els.programBuilderEl.hidden = !hasDraft;
+    if (programRootEl) {
+      programRootEl.innerHTML = hasDraft ? renderBuilder() : renderStartState();
     }
 
     if (els.programTitleEl) {
@@ -217,20 +277,20 @@
         manglerUtforelse.length > 0;
     }
 
-    if (hasDraft) {
+    if (hasDraft && programRootEl) {
       const notater = helpers.getNotaterSection();
-      if (els.notaterInputEl) {
-        els.notaterInputEl.value = notater?.seksjonNotat || "";
+      const notaterInput = programRootEl.querySelector(
+        "[data-action='edit-notater']"
+      );
+      if (notaterInput) {
+        notaterInput.value = notater?.seksjonNotat || "";
       }
-      if (els.programPatientHeaderEl) {
-        els.programPatientHeaderEl.hidden = true;
+      const nameInput = programRootEl.querySelector(
+        "[data-action='edit-program-name']"
+      );
+      if (nameInput) {
+        nameInput.value = state.program?.pasientNavn || "";
       }
-      renderProgram();
-    } else if (els.hoveddelListEl) {
-      if (els.programPatientHeaderEl) {
-        els.programPatientHeaderEl.hidden = true;
-      }
-      els.hoveddelListEl.innerHTML = "";
     }
     renderLibrary();
   }

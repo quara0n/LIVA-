@@ -34,25 +34,82 @@
     });
   }
 
-  if (els.notaterInputEl) {
-    els.notaterInputEl.addEventListener("input", (event) => {
-      actions.setNotater(event.target.value);
-    });
-  }
-
-  if (els.hoveddelListEl) {
-    els.hoveddelListEl.addEventListener("input", (event) => {
+  if (els.programRootEl) {
+    els.programRootEl.addEventListener("input", (event) => {
       const target = event.target;
-      if (!target.matches("[data-action='edit-field']")) return;
-      const instansId = target.dataset.instansId;
-      const field = target.dataset.field;
-      actions.updateDosering(instansId, field, target.value);
+      if (target.matches("[data-action='edit-field']")) {
+        const instansId = target.dataset.instansId;
+        const field = target.dataset.field;
+        actions.updateDosering(instansId, field, target.value);
+        return;
+      }
+      if (target.matches("[data-action='edit-alt-field']")) {
+        const instansId = target.dataset.instansId;
+        const altIndex = Number(target.dataset.altIndex);
+        const field = target.dataset.field;
+        actions.updateAltField(instansId, altIndex, field, target.value);
+        return;
+      }
+      if (target.matches("[data-action='edit-sekundar']")) {
+        const instansId = target.dataset.instansId;
+        const field = target.dataset.field;
+        actions.setSekundar(instansId, field, target.value);
+        return;
+      }
+      if (target.dataset.action === "alt-custom") {
+        actions.setAltCustom(target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-program-name") {
+        actions.setProgramName(target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-notater") {
+        actions.setNotater(target.value);
+      }
     });
 
-    els.hoveddelListEl.addEventListener("click", (event) => {
+    els.programRootEl.addEventListener("change", (event) => {
+      const target = event.target;
+      const action = target.dataset.action;
+      if (action === "alt-preset") {
+        actions.setAltPreset(target.value);
+      }
+    });
+
+    els.programRootEl.addEventListener("click", (event) => {
       const target = event.target;
       const action = target.dataset.action;
       if (!action) return;
+
+      if (action === "create-program") {
+        const nameInput = els.programRootEl.querySelector(
+          "[data-field='start-name']"
+        );
+        const emailInput = els.programRootEl.querySelector(
+          "[data-field='start-email']"
+        );
+        actions.createProgramFromStart(
+          nameInput?.value || "",
+          emailInput?.value || ""
+        );
+        return;
+      }
+
+      if (action === "load-program") {
+        actions.loadProgram();
+        return;
+      }
+
+      if (action === "save-program") {
+        actions.saveProgram();
+        return;
+      }
+
+      if (action === "start-new-program") {
+        actions.startNewProgram();
+        return;
+      }
 
       const instansId = target.dataset.instansId;
       if (action === "remove") actions.removeExercise(instansId);
@@ -66,35 +123,21 @@
       if (action === "toggle-details") actions.toggleDetails(instansId);
     });
 
-    els.hoveddelListEl.addEventListener("change", (event) => {
+    els.programRootEl.addEventListener("keydown", (event) => {
       const target = event.target;
-      const action = target.dataset.action;
-      if (action === "alt-preset") {
-        actions.setAltPreset(target.value);
-      }
-    });
-
-    els.hoveddelListEl.addEventListener("input", (event) => {
-      const target = event.target;
-      if (!target.matches("[data-action='edit-alt-field']")) return;
-      const instansId = target.dataset.instansId;
-      const altIndex = Number(target.dataset.altIndex);
-      const field = target.dataset.field;
-      actions.updateAltField(instansId, altIndex, field, target.value);
-    });
-
-    els.hoveddelListEl.addEventListener("input", (event) => {
-      const target = event.target;
-      if (!target.matches("[data-action='edit-sekundar']")) return;
-      const instansId = target.dataset.instansId;
-      const field = target.dataset.field;
-      actions.setSekundar(instansId, field, target.value);
-    });
-
-    els.hoveddelListEl.addEventListener("input", (event) => {
-      const target = event.target;
-      if (target.dataset.action === "alt-custom") {
-        actions.setAltCustom(target.value);
+      if (event.key !== "Enter") return;
+      if (target.dataset.field === "start-name" || target.dataset.field === "start-email") {
+        event.preventDefault();
+        const nameInput = els.programRootEl.querySelector(
+          "[data-field='start-name']"
+        );
+        const emailInput = els.programRootEl.querySelector(
+          "[data-field='start-email']"
+        );
+        actions.createProgramFromStart(
+          nameInput?.value || "",
+          emailInput?.value || ""
+        );
       }
     });
   }
@@ -110,32 +153,4 @@
     });
   }
 
-  if (
-    els.confirmCreateProgramBtn &&
-    els.startPatientNameInputEl &&
-    els.startPatientEmailInputEl
-  ) {
-    function confirmCreateProgram() {
-      actions.createProgramFromStart(
-        els.startPatientNameInputEl.value,
-        els.startPatientEmailInputEl.value
-      );
-      els.startPatientNameInputEl.value = "";
-      els.startPatientEmailInputEl.value = "";
-    }
-
-    els.confirmCreateProgramBtn.addEventListener("click", confirmCreateProgram);
-
-    els.startPatientNameInputEl.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter") return;
-      event.preventDefault();
-      confirmCreateProgram();
-    });
-
-    els.startPatientEmailInputEl.addEventListener("keydown", (event) => {
-      if (event.key !== "Enter") return;
-      event.preventDefault();
-      confirmCreateProgram();
-    });
-  }
 }

@@ -28,16 +28,9 @@ const els = {
   programTitleEl: document.getElementById("program-title"),
   programStatusEl: document.getElementById("program-status"),
   exportBtn: document.getElementById("export-btn"),
-  hoveddelListEl: document.getElementById("hoveddel-list"),
-  notaterInputEl: document.getElementById("notater-input"),
   libraryGridEl: document.getElementById("library-grid"),
   searchInputEl: document.getElementById("search-input"),
-  programStartStateEl: document.getElementById("program-startstate"),
-  programBuilderEl: document.getElementById("program-builder"),
-  programPatientHeaderEl: document.getElementById("program-patient-header"),
-  startPatientNameInputEl: document.getElementById("start-patient-name"),
-  startPatientEmailInputEl: document.getElementById("start-patient-email"),
-  confirmCreateProgramBtn: document.getElementById("confirm-create-program"),
+  programRootEl: document.getElementById("program-root"),
 };
 
 function showToast(message) {
@@ -59,6 +52,7 @@ const render = createRenderer({
 const actions = createProgramActions({
   state,
   saveDraft,
+  loadDraft,
   render,
   showToast,
 });
@@ -76,7 +70,8 @@ async function loadSeeds() {
   }
 
   const draft = loadDraft();
-  state.program = draft || (await programRes.json());
+  state.programTemplate = await programRes.json();
+  state.program = draft || null;
   state.library = await libraryRes.json();
 }
 

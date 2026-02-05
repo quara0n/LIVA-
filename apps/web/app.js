@@ -11,6 +11,7 @@ const DATA_PATHS = {
 
 const state = {
   program: null,
+  programTemplate: null,
   library: [],
   search: "",
   ui: {
@@ -33,10 +34,14 @@ const els = {
   searchInputEl: document.getElementById("search-input"),
   programStartStateEl: document.getElementById("program-startstate"),
   programBuilderEl: document.getElementById("program-builder"),
-  programPatientHeaderEl: document.getElementById("program-patient-header"),
   startPatientNameInputEl: document.getElementById("start-patient-name"),
   startPatientEmailInputEl: document.getElementById("start-patient-email"),
   confirmCreateProgramBtn: document.getElementById("confirm-create-program"),
+  loadProgramFromStartBtn: document.getElementById("load-program-from-start"),
+  programNameInputEl: document.getElementById("program-name-input"),
+  saveProgramBtn: document.getElementById("save-program-btn"),
+  newProgramBtn: document.getElementById("new-program-btn"),
+  loadProgramBtn: document.getElementById("load-program-btn"),
 };
 
 function showToast(message) {
@@ -74,8 +79,9 @@ async function loadSeeds() {
     throw new Error("Kunne ikke laste seed-data.");
   }
 
+  state.programTemplate = await programRes.json();
   const draft = loadDraft();
-  state.program = draft || (await programRes.json());
+  state.program = draft || null;
   state.library = await libraryRes.json();
 }
 

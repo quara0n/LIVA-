@@ -222,13 +222,13 @@
       if (els.notaterInputEl) {
         els.notaterInputEl.value = notater?.seksjonNotat || "";
       }
-      if (els.programPatientHeaderEl) {
-        els.programPatientHeaderEl.hidden = true;
+      if (els.programNameInputEl) {
+        els.programNameInputEl.value = state.program?.pasientNavn || "";
       }
       renderProgram();
     } else if (els.hoveddelListEl) {
-      if (els.programPatientHeaderEl) {
-        els.programPatientHeaderEl.hidden = true;
+      if (els.programNameInputEl) {
+        els.programNameInputEl.value = "";
       }
       els.hoveddelListEl.innerHTML = "";
     }

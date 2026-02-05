@@ -312,6 +312,31 @@
     state.ui.altPicker.narBrukesEgendefinertTekst = value;
   }
 
+  function setProgramName(value) {
+    if (!state.program) return;
+    state.program.pasientNavn = value;
+    saveDraft(state.program);
+  }
+
+  function saveProgram() {
+    showToast("Lagring kommer i kontrakt 16.");
+  }
+
+  function startNewProgram() {
+    state.ui.altSectionOpen = {};
+    state.ui.showMore = {};
+    state.ui.altPicker = null;
+    state.ui.detailsOpen = {};
+    state.ui.sekundar = {};
+    state.program = createEmptyDraft();
+    saveDraft(state.program);
+    render.full();
+  }
+
+  function loadProgram() {
+    showToast("Hent program kommer i kontrakt 16.");
+  }
+
   function createProgramFromStart(pasientNavn, pasientEpost) {
     if (state.program) return;
     state.program = createEmptyDraft();
@@ -346,6 +371,10 @@
     updateAltField,
     setSekundar,
     setAltCustom,
+    setProgramName,
+    saveProgram,
+    startNewProgram,
+    loadProgram,
     createProgramFromStart,
   };
 }

@@ -1,4 +1,10 @@
-﻿export function createRenderer({ state, els, helpers }) {
+﻿export function createRenderer({ state, els, helpers: initialHelpers }) {
+  let helpers = initialHelpers;
+
+  function setHelpers(nextHelpers) {
+    helpers = nextHelpers;
+  }
+
   function renderAltPickerControls(instansId) {
     const picker = state.ui.altPicker;
     if (!picker || picker.instansId !== instansId) return "";
@@ -76,7 +82,7 @@
 
   function renderProgram() {
     const hoveddel = helpers.getHoveddelSection();
-    if (!hoveddel) return;
+    if (!hoveddel || !els.hoveddelListEl) return;
 
     const items = hoveddel.ovelser
       .map((instans, index) => {
@@ -163,6 +169,7 @@
   }
 
   function renderLibrary() {
+    if (!els.libraryGridEl) return;
     const query = helpers.normalize(state.search);
     const filtered = state.library.filter((item) => helpers.matchesSearch(item, query));
 
@@ -183,30 +190,46 @@
 
   function full() {
     const hasDraft = Boolean(state.program);
-    els.programStartStateEl.hidden = hasDraft;
-    els.programBuilderEl.hidden = !hasDraft;
+    if (els.programStartStateEl) {
+      els.programStartStateEl.hidden = hasDraft;
+    }
+    if (els.programBuilderEl) {
+      els.programBuilderEl.hidden = !hasDraft;
+    }
 
-    els.programTitleEl.textContent = state.program?.tittel || "Program";
-    els.programStatusEl.textContent =
-      state.program?.status === "klar" ? "Klar" : "Utkast";
+    if (els.programTitleEl) {
+      els.programTitleEl.textContent = state.program?.tittel || "Program";
+    }
+    if (els.programStatusEl) {
+      els.programStatusEl.textContent =
+        state.program?.status === "klar" ? "Klar" : "Utkast";
+    }
 
     const hoveddel = helpers.getHoveddelSection();
     const manglerUtforelse = hasDraft
       ? helpers.finnOvelserUtenUtforelse(state.program)
       : [];
-    els.exportBtn.disabled =
-      !hasDraft ||
-      !hoveddel ||
-      hoveddel.ovelser.length === 0 ||
-      manglerUtforelse.length > 0;
+    if (els.exportBtn) {
+      els.exportBtn.disabled =
+        !hasDraft ||
+        !hoveddel ||
+        hoveddel.ovelser.length === 0 ||
+        manglerUtforelse.length > 0;
+    }
 
     if (hasDraft) {
       const notater = helpers.getNotaterSection();
-      els.notaterInputEl.value = notater?.seksjonNotat || "";
-      els.programPatientHeaderEl.hidden = true;
+      if (els.notaterInputEl) {
+        els.notaterInputEl.value = notater?.seksjonNotat || "";
+      }
+      if (els.programPatientHeaderEl) {
+        els.programPatientHeaderEl.hidden = true;
+      }
       renderProgram();
-    } else {
-      els.programPatientHeaderEl.hidden = true;
+    } else if (els.hoveddelListEl) {
+      if (els.programPatientHeaderEl) {
+        els.programPatientHeaderEl.hidden = true;
+      }
       els.hoveddelListEl.innerHTML = "";
     }
     renderLibrary();
@@ -215,5 +238,6 @@
   return {
     full,
     renderLibrary,
+    setHelpers,
   };
 }

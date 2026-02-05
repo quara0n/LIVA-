@@ -1,7 +1,9 @@
 ﻿export function createProgramActions({
   state,
+  saveArchive,
+  loadArchive,
+  saveActiveProgramId,
   saveDraft,
-  loadDraft,
   render,
   showToast,
 }) {
@@ -53,6 +55,7 @@
       oppdatertTid: createdAt,
       pasientNavn: "",
       pasientEpost: "",
+      archiveId: null,
       seksjoner: baseSections.map((seksjon) => ({
         ...seksjon,
         ovelser: [],
@@ -321,13 +324,74 @@
   function setProgramName(value) {
     if (!state.program) return;
     state.program.pasientNavn = value;
+    if (state.ui.nameError) {
+      state.ui.nameError = "";
+      render.full();
+    }
+    saveDraft(state.program);
+  }
+
+  function setProgramEmail(value) {
+    if (!state.program) return;
+    state.program.pasientEpost = value;
     saveDraft(state.program);
   }
 
   function saveProgram() {
     if (!state.program) return;
+    const name = String(state.program.pasientNavn || "").trim();
+    if (!name) {
+      state.ui.nameError = "Navn må fylles ut.";
+      render.full();
+      return;
+    }
+
+    state.ui.nameError = "";
+    const now = nowIso();
+    const archive = Array.isArray(state.archive) ? [...state.archive] : [];
+    const archiveId = state.program.archiveId;
+    const content = { ...state.program };
+
+    if (!archiveId) {
+      const newId = makeId("archive");
+      archive.push({
+        id: newId,
+        patientName: name,
+        email: state.program.pasientEpost || "",
+        createdAt: now,
+        updatedAt: now,
+        content,
+      });
+      state.program.archiveId = newId;
+      saveActiveProgramId(newId);
+    } else {
+      const index = archive.findIndex((item) => item.id === archiveId);
+      if (index >= 0) {
+        archive[index] = {
+          ...archive[index],
+          patientName: name,
+          email: state.program.pasientEpost || "",
+          updatedAt: now,
+          content,
+        };
+      } else {
+        archive.push({
+          id: archiveId,
+          patientName: name,
+          email: state.program.pasientEpost || "",
+          createdAt: now,
+          updatedAt: now,
+          content,
+        });
+      }
+      saveActiveProgramId(archiveId);
+    }
+
+    state.archive = archive;
+    saveArchive(archive);
     saveDraft(state.program);
-    showToast("Utkast lagret.");
+    showToast("Program lagret.");
+    render.full();
   }
 
   function startNewProgram() {
@@ -336,6 +400,7 @@
     state.ui.altPicker = null;
     state.ui.detailsOpen = {};
     state.ui.sekundar = {};
+    state.ui.nameError = "";
     state.program = createEmptyDraft();
     state.ui.panelView = "builder";
     saveDraft(state.program);
@@ -343,6 +408,7 @@
   }
 
   function loadProgram() {
+    state.archive = loadArchive();
     state.ui.panelView = "load";
     render.full();
   }
@@ -351,7 +417,29 @@
     state.program = createEmptyDraft();
     state.program.pasientNavn = (pasientNavn || "").trim();
     state.program.pasientEpost = (pasientEpost || "").trim();
+    state.ui.nameError = "";
     state.ui.panelView = "builder";
+    saveDraft(state.program);
+    render.full();
+  }
+
+  function openArchivedProgram(id) {
+    const archive = Array.isArray(state.archive) ? state.archive : [];
+    const entry = archive.find((item) => item.id === id);
+    if (!entry || !entry.content) return;
+    const content = { ...entry.content };
+    content.pasientNavn = entry.patientName || content.pasientNavn || "";
+    content.pasientEpost = entry.email || content.pasientEpost || "";
+    content.archiveId = entry.id;
+    state.ui.altSectionOpen = {};
+    state.ui.showMore = {};
+    state.ui.altPicker = null;
+    state.ui.detailsOpen = {};
+    state.ui.sekundar = {};
+    state.program = content;
+    state.ui.panelView = "builder";
+    state.ui.nameError = "";
+    saveActiveProgramId(entry.id);
     saveDraft(state.program);
     render.full();
   }
@@ -382,9 +470,11 @@
     setSekundar,
     setAltCustom,
     setProgramName,
+    setProgramEmail,
     saveProgram,
     startNewProgram,
     loadProgram,
     createProgramFromStart,
+    openArchivedProgram,
   };
 }

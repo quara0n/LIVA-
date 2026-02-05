@@ -32,6 +32,7 @@ const els = {
   notaterInputEl: document.getElementById("notater-input"),
   libraryGridEl: document.getElementById("library-grid"),
   searchInputEl: document.getElementById("search-input"),
+  programPanelEl: document.querySelector(".panel-left.program-shell"),
   programStartStateEl: document.getElementById("program-startstate"),
   programBuilderEl: document.getElementById("program-builder"),
   startPatientNameInputEl: document.getElementById("start-patient-name"),
@@ -81,8 +82,7 @@ async function loadSeeds() {
   }
 
   state.programTemplate = await programRes.json();
-  const draft = loadDraft();
-  state.program = draft || null;
+  state.program = null;
   state.library = await libraryRes.json();
 }
 

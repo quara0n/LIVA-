@@ -352,7 +352,6 @@
   }
 
   function createProgramFromStart(pasientNavn, pasientEpost) {
-    if (state.program) return;
     state.program = createEmptyDraft();
     state.program.pasientNavn = (pasientNavn || "").trim();
     state.program.pasientEpost = (pasientEpost || "").trim();

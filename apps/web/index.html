@@ -7,38 +7,61 @@
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <div class="app">
-      <header class="topbar">
+    <div class="app app-shell">
+      <header class="topbar app-toolbar">
         <div class="title-block">
           <h1 id="program-title">Program</h1>
           <span class="status" id="program-status">Utkast</span>
         </div>
-        <button id="export-btn" class="primary" disabled>Eksporter PDF</button>
+        <div class="toolbar-actions">
+          <button id="export-btn" class="primary" disabled>Eksporter PDF</button>
+        </div>
       </header>
 
       <main class="layout">
-        <section class="panel program">
-          <div class="panel-header">
-            <h2>Program</h2>
+        <section class="panel program panel-left program-shell">
+          <div class="program-startstate startstate" id="program-startstate" hidden>
+            <div class="startstate-card">
+              <input
+                id="start-patient-name"
+                type="text"
+                autocomplete="name"
+                placeholder="Pasientnavn (valgfritt)"
+              />
+              <input
+                id="start-patient-email"
+                type="email"
+                autocomplete="email"
+                placeholder="E-post (valgfritt)"
+              />
+              <button id="confirm-create-program" class="primary">Lag program</button>
+            </div>
           </div>
 
-          <div class="section" id="section-hoveddel">
-            <div class="section-body" id="hoveddel-list"></div>
-          </div>
+          <div class="program-canvas" id="program-builder">
+            <div class="panel-header program-header">
+              <h2>Program</h2>
+              <div class="patient-inline" id="program-patient-header" hidden></div>
+            </div>
 
-          <div class="section" id="section-notater">
-            <div class="section-body">
-              <textarea
-                id="notater-input"
-                rows="6"
-                placeholder="Skriv korte, konkrete instruksjoner..."
-              ></textarea>
+            <div class="section" id="section-hoveddel">
+              <div class="section-body exercise-list" id="hoveddel-list"></div>
+            </div>
+
+            <div class="section" id="section-notater">
+              <div class="section-body">
+                <textarea
+                  id="notater-input"
+                  rows="6"
+                  placeholder="Skriv korte, konkrete instruksjoner..."
+                ></textarea>
+              </div>
             </div>
           </div>
         </section>
 
-        <section class="panel library">
-          <div class="panel-header">
+        <section class="panel library panel-right">
+          <div class="panel-header library-header">
             <h2>Øvelsesbibliotek</h2>
             <input
               id="search-input"
@@ -46,7 +69,7 @@
               placeholder="Søk etter øvelse, tag eller alias"
             />
           </div>
-          <div class="library-grid" id="library-grid"></div>
+          <div class="library-grid library-list" id="library-grid"></div>
         </section>
       </main>
     </div>

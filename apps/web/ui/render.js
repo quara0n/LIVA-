@@ -197,19 +197,30 @@
             <button class="primary" data-action="create-program">Lag program</button>
             <button class="action-btn" data-action="load-program">Hent program</button>
           </div>
-          <input
-            data-field="start-name"
-            type="text"
-            autocomplete="name"
-            placeholder="Pasientnavn (valgfritt)"
-          />
-          <input
-            data-field="start-email"
-            type="email"
-            autocomplete="email"
-            placeholder="E-post (valgfritt)"
-          />
-          <p class="hint">Opprett eller hent program før redigering.</p>
+          <div class="startstate-patient">
+            <input
+              data-field="start-name"
+              type="text"
+              autocomplete="name"
+              placeholder="Navn"
+            />
+            <input
+              data-field="start-email"
+              type="email"
+              autocomplete="email"
+              placeholder="E-post (valgfritt)"
+            />
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderLoadState() {
+    return `
+      <div class="program-loadstate startstate">
+        <div class="startstate-card">
+          <div class="startstate-title">Hent program</div>
         </div>
       </div>
     `;
@@ -253,8 +264,16 @@
 
   function full() {
     const hasDraft = Boolean(state.program);
+    let panelView = state.ui.panelView || (hasDraft ? "builder" : "start");
+    if (hasDraft && panelView === "start") panelView = "builder";
+    if (!hasDraft && panelView === "builder") panelView = "start";
     if (programRootEl) {
-      programRootEl.innerHTML = hasDraft ? renderBuilder() : renderStartState();
+      programRootEl.innerHTML =
+        panelView === "builder"
+          ? renderBuilder()
+          : panelView === "load"
+            ? renderLoadState()
+            : renderStartState();
     }
 
     if (els.programTitleEl) {
@@ -277,7 +296,7 @@
         manglerUtforelse.length > 0;
     }
 
-    if (hasDraft && programRootEl) {
+    if (hasDraft && panelView === "builder" && programRootEl) {
       const notater = helpers.getNotaterSection();
       const notaterInput = programRootEl.querySelector(
         "[data-action='edit-notater']"

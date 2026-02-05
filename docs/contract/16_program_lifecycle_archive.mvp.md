@@ -151,19 +151,19 @@ MVP: ingen søk, ingen filter, ingen sletting.
 Persistens / refresh (LÅST)
 Draft autosave (LÅST)
 
-Aktivt program autosaves som “draft” (inkl pasientinfo) for å overleve refresh.
+Aktivt program kan autosaves som “draft” (inkl pasientinfo) under arbeid.
 
-Draft er det som lastes ved refresh hvis tilgjengelig.
+Draft skal ikke trigge auto-restore i MVP.
 
 Refresh-regel (LÅST)
 
-Ved refresh:
+Ved refresh: starttilstand vises alltid (ikke builder), draft ignoreres.
 
-Hvis draft finnes → last draft og vis programbygger direkte
+Ved ny sesjon: starttilstand vises alltid (ikke builder), draft ignoreres.
 
-Hvis ingen draft → vis starttilstand
+Draft kan fortsatt brukes som intern datastruktur under arbeid, men skal ikke trigge auto-restore i MVP.
 
-activeProgramId brukes for “hvilket arkivprogram er koblet til aktivt program” når det finnes, men refresh gjenoppretting styres av draft.
+activeProgramId brukes for “hvilket arkivprogram er koblet til aktivt program” når det finnes, men påvirker ikke refresh/starttilstand i MVP.
 
 Forbud (MVP)
 

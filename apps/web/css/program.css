@@ -29,6 +29,15 @@
   justify-content: center;
 }
 
+.startstate-patient {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 10px;
+  background: #fff;
+}
+
 .startstate-card input[type="text"],
 .startstate-card input[type="email"] {
   width: 100%;

@@ -1,38 +1,62 @@
 Formål
 
-Gi venstre panel en tydelig starttilstand slik at kliniker eksplisitt oppretter eller henter et program før redigering.
+Gi venstre panel en tydelig og ryddig starttilstand slik at kliniker alltid eksplisitt velger å lage eller hente et program før redigering.
 
 Scope (MVP)
 
-Gjelder kun venstre “Program”-panel sin tomtilstand, oppstart og programtopp (kontroller når programbygger er aktiv).
+Gjelder kun venstre “Program”-panel:
 
-Ingen redesign av resten av siden.
+starttilstand (tomtilstand)
 
-Ingen endringer i høyre øvelsesbibliotek eller toppheader.
+overgang til programbygger
 
-Arkiv/listing/henting av flere programmer er definert i kontrakt 16 (ikke her).
+programtopp når builder er aktiv
+
+Ikke i scope
+
+Ingen redesign av resten av siden
+
+Ingen endringer i høyre øvelsesbibliotek
+
+Ingen endringer i toppheader
+
+Arkiv/listing/innhold i “Hent program”-flyt er definert i kontrakt 16 (ikke her)
+
+Definisjoner (LÅST)
+
+Starttilstand: Venstre panel viser kun “Lag program” + “Hent program” + pasientboks.
+
+Programbygger (builder): Redigering av øvelser/dosering/progresjon osv.
+
+Ny sesjon: Appen åpnes etter innlogging / nytt besøk (f.eks. etter logout/login, ny fane, ny nettleserøkt).
+
+Refresh: Reload av siden (F5 / browser refresh).
 
 Starttilstand (LÅST)
 
-Når det ikke finnes et aktivt program (første gang / tom state):
+Starttilstand skal vises når:
 
-Venstre panel viser kun:
+det ikke finnes et aktivt program eller
 
-To knapper på samme rad:
+appen lastes (ny sesjon eller refresh) — se Persistens-regler
+
+I starttilstand skal venstre panel vise kun:
+
+To knapper på samme rad
 
 Primær: “Lag program”
 
 Sekundær: “Hent program”
 
-En “Pasient”-boks rett under knappene med felter:
+“Pasient”-boks rett under knappene med felter
 
 Pasientnavn (tekst)
 
 E-post (tekst, valgfritt)
 
-(Valgfritt) én kort hjelpelinje under pasientboksen.
+(Valgfritt) én kort hjelpelinje under pasientboksen
 
-Følgende skal IKKE vises i starttilstand
+Dette skal IKKE vises i starttilstand (LÅST)
 
 øvelsesliste i programmet
 
@@ -43,6 +67,8 @@ progresjon/regresjon UI
 dosering/redigering
 
 “ingen øvelser lagt til ennå”-tekst (erstattes av starttilstanden)
+
+programtopp (builder topbar)
 
 Opprett / hent program (LÅST)
 Når kliniker trykker “Lag program”
@@ -61,7 +87,7 @@ Starttilstanden forsvinner
 
 “Hent program”-flyten åpnes i venstre panel (ingen modal, ingen ny side)
 
-Selve listing/valg/åpning av andre programmer styres av kontrakt 16
+Selve listing/valg/åpning av programmer styres av kontrakt 16
 
 Når et program velges i hent-flyten, blir det aktivt og programbygger-visningen vises
 
@@ -69,7 +95,7 @@ Programtopp (LÅST)
 
 Når programbygger-visningen er aktiv, skal det vises en topprad i toppen av programområdet.
 
-Innhold (rekkefølge fra venstre til høyre)
+Innhold (rekkefølge fra venstre til høyre):
 
 Navn (pasientnavn, inline editable)
 
@@ -79,31 +105,37 @@ Nytt program (knapp)
 
 Hent program (knapp)
 
-Interaksjon
+Interaksjon (LÅST)
 
 Navn kan editeres inline
 
 E-post håndteres i kontrakt 16 dersom den skal vises i builder; denne kontrakten låser kun Navn-feltet i programtoppen
 
-“Lagre”, “Nytt program”, “Hent program”:
+“Lagre”, “Nytt program”, “Hent program”: funksjonell oppførsel defineres av kontrakt 16
+(denne kontrakten låser at knappene finnes og hvor de ligger)
 
-funksjonell oppførsel defineres av kontrakt 16
-
-denne kontrakten låser at knappene finnes og hvor de ligger
-
-Viktig
-
+Viktig (LÅST)
 Starttilstanden (knapper + pasientboks) skal ikke vises samtidig som programtoppen (builder aktiv).
 
 Persistens / gjenoppretting (LÅST)
 
-Aktivt program (inkl navn/e-post dersom disse finnes i programdata) skal lagres automatisk (draft/autosave) i MVP.
+MVP-oppførsel skal være “ryddig start”:
 
-Ved refresh:
+Ny sesjon (LÅST)
 
-hvis det finnes lagret program i draft → programbygger vises direkte (ikke starttilstand)
+Ved ny sesjon skal venstre panel alltid starte i starttilstand.
+Appen skal ikke automatisk gå rett inn i builder basert på tidligere draft.
 
-hvis ingen lagret program → starttilstand vises
+Refresh (LÅST)
+
+Ved refresh skal venstre panel alltid starte i starttilstand.
+Draft skal ignoreres ved refresh.
+
+Draft (LÅST)
+
+Program kan fortsatt opprette/oppdatere “draft” som datastruktur under arbeid (f.eks. for senere arkivering), men:
+
+draft skal ikke brukes til automatisk gjenoppretting ved refresh eller ny sesjon i MVP.
 
 Merk: Arkiv, flere programmer og “Hent program”-innhold er definert i kontrakt 16. Denne kontrakten beskriver kun starttilstand + inngangskontroller + programtopp.
 
@@ -111,7 +143,7 @@ Forbud (MVP)
 
 Ingen modaler
 
-Ingen nye sider/route
+Ingen nye sider/routes
 
 Ingen redesign av høyre øvelsesbibliotek eller toppheader
 
@@ -119,7 +151,7 @@ Ingen “arkivvisning” eller programliste defineres her (kontrakt 16)
 
 Acceptance criteria (testbart)
 
-Tom state → venstre panel viser kun:
+Ved app-load (ny sesjon) → venstre panel viser kun:
 
 “Lag program” og “Hent program”
 
@@ -141,8 +173,15 @@ hent-flyt vises i venstre panel (ingen modal / ny side)
 
 Refresh etter at program er opprettet →
 
-programbygger vises igjen (state bevart)
+starttilstand vises (ikke builder)
 
-Pasientnavn/e-post persisterer etter refresh (som del av draft)
+Ny sesjon (logout/login, ny nettleserøkt) etter at program er opprettet →
+
+starttilstand vises (ikke builder)
 
 Ingen andre UI-endringer.
+
+Viktig konsekvens (for Codex)
+
+Denne kontrakten overstyrer enhver tidligere regel om “draft → builder ved refresh”.
+Hvis kontrakt 16 har refresh-regel som sier noe annet, må 16 oppdateres for konsistens.

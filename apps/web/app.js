@@ -20,6 +20,7 @@ const state = {
     altPicker: null,
     detailsOpen: {},
     sekundar: {},
+    panelView: "start",
   },
 };
 
@@ -69,9 +70,9 @@ async function loadSeeds() {
     throw new Error("Kunne ikke laste seed-data.");
   }
 
-  const draft = loadDraft();
   state.programTemplate = await programRes.json();
-  state.program = draft || null;
+  state.program = null;
+  state.ui.panelView = "start";
   state.library = await libraryRes.json();
 }
 

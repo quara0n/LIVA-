@@ -20,6 +20,7 @@ const state = {
     altPicker: null,
     detailsOpen: {},
     sekundar: {},
+    panelView: "start",
   },
 };
 

@@ -337,17 +337,13 @@
     state.ui.detailsOpen = {};
     state.ui.sekundar = {};
     state.program = createEmptyDraft();
+    state.ui.panelView = "builder";
     saveDraft(state.program);
     render.full();
   }
 
   function loadProgram() {
-    const draft = loadDraft();
-    if (!draft) {
-      showToast("Fant ikke et lagret utkast.");
-      return;
-    }
-    state.program = draft;
+    state.ui.panelView = "load";
     render.full();
   }
 
@@ -355,6 +351,7 @@
     state.program = createEmptyDraft();
     state.program.pasientNavn = (pasientNavn || "").trim();
     state.program.pasientEpost = (pasientEpost || "").trim();
+    state.ui.panelView = "builder";
     saveDraft(state.program);
     render.full();
   }

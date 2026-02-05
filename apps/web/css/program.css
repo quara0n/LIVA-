@@ -1,0 +1,275 @@
+.startstate {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  align-content: center;
+  min-height: calc(70vh - 90px);
+  text-align: center;
+}
+
+.startstate-card {
+  display: grid;
+  gap: 10px;
+  width: min(320px, 100%);
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fcfbf9;
+}
+
+.startstate-card .primary {
+  width: 100%;
+}
+
+.patient-header {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #fcfbf9;
+}
+
+.patient-header div:first-child {
+  font-weight: 600;
+}
+
+.patient-header div:last-child {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.startstate-card input[type="text"],
+.startstate-card input[type="email"] {
+  width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--border);
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.section {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #fcfbf9;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.section-title h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.section-body {
+  display: grid;
+  gap: 12px;
+}
+
+.exercise-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+}
+
+.exercise-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+
+.exercise-title {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex: 1 1 280px;
+  min-width: 220px;
+}
+
+.exercise-title .emoji {
+  font-size: 22px;
+}
+
+.exercise-title h4 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.inline-actions {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.inline-btn {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.inline-btn:hover {
+  color: var(--ink);
+}
+
+.times {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.exercise-meta {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 13px;
+}
+
+.inline-input {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 13px;
+  width: 80px;
+}
+
+.inline-input.wide {
+  width: 160px;
+}
+
+.inline-input.compact {
+  width: 90px;
+}
+
+.comment-input {
+  min-width: 180px;
+}
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+.expand-btn {
+  border: 1px solid var(--border);
+  background: #f7f5f1;
+  color: var(--ink);
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.expand {
+  margin-top: 10px;
+  border-top: 1px dashed var(--border);
+  padding-top: 10px;
+}
+
+.alt-section {
+  margin-top: 8px;
+}
+
+.alt-section.compact {
+  margin-top: 10px;
+}
+
+.alt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alt-inline {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.alt-inline.compact {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--border);
+}
+
+.alt-inline-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.alt-list {
+  margin-top: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.alt-item {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  background: #fdfbf7;
+}
+
+.alt-item.child {
+  background: #fbf8f1;
+}
+
+.alt-item strong {
+  display: block;
+  font-size: 13px;
+}
+
+.alt-item .tag {
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.alt-meta {
+  margin-top: 6px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  font-size: 12px;
+}
+
+.alt-desc {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.alt-actions {
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.select {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font-size: 12px;
+}

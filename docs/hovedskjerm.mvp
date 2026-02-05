@@ -1,0 +1,43 @@
+Node: UX & UI
+Oppgave: Implementer én MVP-hovedskjerm (én side) med delt layout:
+
+TOPPBAR:
+- Programtittel (inline)
+- Status (Utkast)
+- Primærknapp "Eksporter PDF" (disabled hvis ingen øvelser)
+
+VENSTRE (Program):
+- Seksjoner (MVP): Hoveddel + Notater til pasient
+- Øvelser i Hoveddel viser emoji + navn + dosering (inline) + kommentar (inline)
+- Handlinger: reorder, fjern
+- Notater til pasient: fritekstfelt
+
+HØYRE (Øvelsesbibliotek):
+- Søk
+- Emoji-grid som dekker høyresiden:
+  - Minst 4 kolonner
+  - Minst 6 rader synlig
+- Hver tile: stor emoji + navn + (valgfri tag) + "Legg til"
+- "Legg til" legger øvelsen i Hoveddel
+
+PROGRESJON/REGRESJON (MVP LÅST):
+- I venstre Program: hver øvelse kan ekspanderes
+- Expanded view har seksjon "Alternativer" (kollapsbar)
+- Viser Progresjon og Regresjon fra master-øvelsen:
+  - Top 3 vises direkte
+  - resten bak "Vis flere"
+- Klikk "Legg til" på et alternativ:
+  - Krever valg av "Når brukes?" (VALG B):
+    1) Når smerte og funksjon er akseptabel
+    2) Når øvelsen kjennes lett og kontrollert
+    3) Ved økt smerte eller redusert kontroll
+    4) Ved behov for enklere variant
+    5) Egendefinert (én kort linje)
+  - Lagre på øvelse-instansen: retning, navn(snapshot), tagger, narBrukes
+  - Maks 3 progresjoner + 3 regresjoner per øvelse-instans
+  - Alternativer blir IKKE egne øvelser i programlisten
+  - Alt som velges skal alltid med i PDF-data
+
+Ingen modaler. Inline UI. Ingen nye features.
+Alt drives av seed JSON: program.seed.json og ovelsesbibliotek.seed.json.
+Hvis noe er uklart: stopp og spør.

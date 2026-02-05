@@ -1,0 +1,119 @@
+[
+  {
+    "ovelseId": "kneboy",
+    "navn": "Knebøy",
+    "utforelseTekst": "Stå med føtter hoftebredde. Sett deg rolig ned og press opp igjen. Hold knær over tær.",
+    "emoji": "🦵",
+    "alias": ["squat"],
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardProgresjon": ["goblet-kneboy", "front-kneboy", "bulgarsk-split"],
+    "standardRegresjon": ["box-kneboy", "stol-kneboy", "wall-sit"]
+  },
+  {
+    "ovelseId": "goblet-kneboy",
+    "navn": "Goblet knebøy",
+    "utforelseTekst": "Hold en vekt tett mot brystet. Senk deg kontrollert ned og reis deg opp. Hold overkroppen stolt.",
+    "emoji": "🏋️",
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardRegresjon": ["kneboy"]
+  },
+  {
+    "ovelseId": "front-kneboy",
+    "navn": "Frontbøy",
+    "utforelseTekst": "Hold stang foran skuldrene. Senk deg kontrollert ned og press opp. Hold albuene høyt.",
+    "emoji": "🏋️",
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"]
+  },
+  {
+    "ovelseId": "bulgarsk-split",
+    "navn": "Bulgarsk splittknebøy",
+    "utforelseTekst": "Sett bakre fot på benk. Senk deg kontrollert ned og press opp igjen. Hold hoftene stabile.",
+    "emoji": "🧍",
+    "tagger": ["balanse"],
+    "anbefaltDoseringstyper": ["reps_x_sett"]
+  },
+  {
+    "ovelseId": "box-kneboy",
+    "navn": "Box-knebøy",
+    "utforelseTekst": "Sett deg rolig ned på en boks og reis deg opp. Hold vekt jevnt på hele foten. Unngå å falle ned.",
+    "emoji": "🪑",
+    "tagger": ["kontroll"],
+    "anbefaltDoseringstyper": ["reps_x_sett"]
+  },
+  {
+    "ovelseId": "stol-kneboy",
+    "navn": "Stol-knebøy",
+    "utforelseTekst": "Sett deg rolig ned på en stol og reis deg opp. Bruk armene minimalt. Hold knær over tær.",
+    "emoji": "🪑",
+    "tagger": ["trygg"],
+    "anbefaltDoseringstyper": ["reps_x_sett"]
+  },
+  {
+    "ovelseId": "wall-sit",
+    "navn": "Wall sit",
+    "utforelseTekst": "Stå med rygg mot vegg og gå ned til 90 grader. Hold stillingen. Press hælene i gulvet.",
+    "emoji": "🧱",
+    "tagger": ["isometrisk"],
+    "anbefaltDoseringstyper": ["varighet"]
+  },
+  {
+    "ovelseId": "step-up",
+    "navn": "Step-up",
+    "utforelseTekst": "Trå opp på kasse med kontroll. Stram setet og rett ut hoften. Gå rolig ned igjen.",
+    "emoji": "🪜",
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardProgresjon": ["utfall", "bulgarsk-split"],
+    "standardRegresjon": ["stol-kneboy"]
+  },
+  {
+    "ovelseId": "utfall",
+    "navn": "Utfall",
+    "utforelseTekst": "Ta et steg frem og senk deg kontrollert ned. Press opp til start. Hold overkroppen oppreist.",
+    "emoji": "🚶",
+    "tagger": ["styrke"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardRegresjon": ["step-up"]
+  },
+  {
+    "ovelseId": "leg-press",
+    "navn": "Leg press",
+    "utforelseTekst": "Plasser føttene på platen i hoftebredde. Press ut og senk kontrollert. Unngå å låse knærne.",
+    "emoji": "🦿",
+    "tagger": ["maskin"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardRegresjon": ["goblet-kneboy"]
+  },
+  {
+    "ovelseId": "balanse-stand",
+    "navn": "Ettbeins balanse",
+    "utforelseTekst": "Stå på ett ben med lett bøy i kne. Hold blikket frem. Stabiliser hoften.",
+    "emoji": "🧘",
+    "tagger": ["balanse"],
+    "anbefaltDoseringstyper": ["varighet"],
+    "standardProgresjon": ["bulgarsk-split"],
+    "standardRegresjon": ["stol-kneboy"]
+  },
+  {
+    "ovelseId": "straight-leg-raise",
+    "navn": "Straight leg raise",
+    "utforelseTekst": "Ligg på ryggen og stram lårmuskelen. Løft strakt ben rolig opp og senk kontrollert. Hold korsryggen nøytral.",
+    "emoji": "🦵",
+    "tagger": ["aktivering"],
+    "anbefaltDoseringstyper": ["reps_x_sett"],
+    "standardProgresjon": ["quad-set"],
+    "standardRegresjon": ["stol-kneboy"]
+  },
+  {
+    "ovelseId": "quad-set",
+    "navn": "Quad set",
+    "utforelseTekst": "Ligg med strakt ben og stram låret. Press knehasen lett ned. Hold et par sekunder.",
+    "emoji": "⚡",
+    "tagger": ["aktivering"],
+    "anbefaltDoseringstyper": ["varighet"],
+    "standardRegresjon": ["straight-leg-raise"]
+  }
+]

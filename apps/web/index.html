@@ -17,61 +17,34 @@
           <span class="status" id="program-status">Utkast</span>
         </div>
         <div class="toolbar-actions">
-          <button id="export-btn" class="primary" disabled>
-            Eksporter PDF
-          </button>
+          <button id="export-btn" class="primary" disabled>Eksporter PDF</button>
         </div>
       </header>
 
       <main class="layout">
         <section class="panel program panel-left program-shell">
-          <div
-            class="program-startstate startstate"
-            id="program-startstate"
-            hidden
-          >
+          <div class="program-startstate startstate" id="program-startstate" hidden>
             <div class="startstate-card">
-              <div class="start-actions">
-                <button id="confirm-create-program" class="primary">
-                  Lag program
-                </button>
-                <button id="load-program-from-start" class="action-btn">
-                  Hent program
-                </button>
-              </div>
               <input
                 id="start-patient-name"
                 type="text"
                 autocomplete="name"
-                placeholder="Navn"
+                placeholder="Pasientnavn (valgfritt)"
               />
               <input
                 id="start-patient-email"
                 type="email"
                 autocomplete="email"
-                placeholder="E-postadresse"
+                placeholder="E-post (valgfritt)"
               />
+              <button id="confirm-create-program" class="primary">Lag program</button>
             </div>
           </div>
 
           <div class="program-canvas" id="program-builder">
             <div class="panel-header program-header">
-              <div class="program-top-controls">
-                <input
-                  id="program-name-input"
-                  class="inline-input wide"
-                  type="text"
-                  autocomplete="name"
-                  placeholder="Navn"
-                />
-                <button id="save-program-btn" class="action-btn">Lagre</button>
-                <button id="new-program-btn" class="action-btn">
-                  Nytt program
-                </button>
-                <button id="load-program-btn" class="action-btn">
-                  Hent program
-                </button>
-              </div>
+              <h2>Program</h2>
+              <div class="patient-inline" id="program-patient-header" hidden></div>
             </div>
 
             <div class="section" id="section-hoveddel">

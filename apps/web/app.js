@@ -32,17 +32,12 @@ const els = {
   notaterInputEl: document.getElementById("notater-input"),
   libraryGridEl: document.getElementById("library-grid"),
   searchInputEl: document.getElementById("search-input"),
-  programPanelEl: document.querySelector(".panel-left.program-shell"),
   programStartStateEl: document.getElementById("program-startstate"),
   programBuilderEl: document.getElementById("program-builder"),
+  programPatientHeaderEl: document.getElementById("program-patient-header"),
   startPatientNameInputEl: document.getElementById("start-patient-name"),
   startPatientEmailInputEl: document.getElementById("start-patient-email"),
   confirmCreateProgramBtn: document.getElementById("confirm-create-program"),
-  loadProgramFromStartBtn: document.getElementById("load-program-from-start"),
-  programNameInputEl: document.getElementById("program-name-input"),
-  saveProgramBtn: document.getElementById("save-program-btn"),
-  newProgramBtn: document.getElementById("new-program-btn"),
-  loadProgramBtn: document.getElementById("load-program-btn"),
 };
 
 function showToast(message) {
@@ -64,7 +59,6 @@ const render = createRenderer({
 const actions = createProgramActions({
   state,
   saveDraft,
-  loadDraft,
   render,
   showToast,
 });
@@ -81,8 +75,8 @@ async function loadSeeds() {
     throw new Error("Kunne ikke laste seed-data.");
   }
 
-  state.programTemplate = await programRes.json();
-  state.program = null;
+  const draft = loadDraft();
+  state.program = draft || (await programRes.json());
   state.library = await libraryRes.json();
 }
 

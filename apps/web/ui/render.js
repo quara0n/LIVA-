@@ -190,28 +190,11 @@
 
   function full() {
     const hasDraft = Boolean(state.program);
-    const panelEl = els.programPanelEl;
-    const startStateEl = els.programStartStateEl;
-    const builderEl = els.programBuilderEl;
-
-    if (panelEl && startStateEl && builderEl) {
-      startStateEl.hidden = false;
-      builderEl.hidden = false;
-      if (hasDraft) {
-        if (startStateEl.parentElement === panelEl) {
-          panelEl.removeChild(startStateEl);
-        }
-        if (builderEl.parentElement !== panelEl) {
-          panelEl.insertBefore(builderEl, panelEl.firstChild);
-        }
-      } else {
-        if (builderEl.parentElement === panelEl) {
-          panelEl.removeChild(builderEl);
-        }
-        if (startStateEl.parentElement !== panelEl) {
-          panelEl.insertBefore(startStateEl, panelEl.firstChild);
-        }
-      }
+    if (els.programStartStateEl) {
+      els.programStartStateEl.hidden = hasDraft;
+    }
+    if (els.programBuilderEl) {
+      els.programBuilderEl.hidden = !hasDraft;
     }
 
     if (els.programTitleEl) {
@@ -239,13 +222,13 @@
       if (els.notaterInputEl) {
         els.notaterInputEl.value = notater?.seksjonNotat || "";
       }
-      if (els.programNameInputEl) {
-        els.programNameInputEl.value = state.program?.pasientNavn || "";
+      if (els.programPatientHeaderEl) {
+        els.programPatientHeaderEl.hidden = true;
       }
       renderProgram();
     } else if (els.hoveddelListEl) {
-      if (els.programNameInputEl) {
-        els.programNameInputEl.value = "";
+      if (els.programPatientHeaderEl) {
+        els.programPatientHeaderEl.hidden = true;
       }
       els.hoveddelListEl.innerHTML = "";
     }

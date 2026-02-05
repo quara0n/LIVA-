@@ -125,11 +125,6 @@
     }
 
     els.confirmCreateProgramBtn.addEventListener("click", confirmCreateProgram);
-    if (els.loadProgramFromStartBtn) {
-      els.loadProgramFromStartBtn.addEventListener("click", () => {
-        actions.loadProgram();
-      });
-    }
 
     els.startPatientNameInputEl.addEventListener("keydown", (event) => {
       if (event.key !== "Enter") return;
@@ -141,30 +136,6 @@
       if (event.key !== "Enter") return;
       event.preventDefault();
       confirmCreateProgram();
-    });
-  }
-
-  if (els.programNameInputEl) {
-    els.programNameInputEl.addEventListener("input", (event) => {
-      actions.setProgramName(event.target.value);
-    });
-  }
-
-  if (els.saveProgramBtn) {
-    els.saveProgramBtn.addEventListener("click", () => {
-      actions.saveProgram();
-    });
-  }
-
-  if (els.newProgramBtn) {
-    els.newProgramBtn.addEventListener("click", () => {
-      actions.startNewProgram();
-    });
-  }
-
-  if (els.loadProgramBtn) {
-    els.loadProgramBtn.addEventListener("click", () => {
-      actions.loadProgram();
     });
   }
 }

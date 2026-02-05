@@ -64,10 +64,6 @@
         actions.setProgramName(target.value);
         return;
       }
-      if (target.dataset.action === "edit-program-email") {
-        actions.setProgramEmail(target.value);
-        return;
-      }
       if (target.dataset.action === "edit-notater") {
         actions.setNotater(target.value);
       }
@@ -112,32 +108,6 @@
 
       if (action === "start-new-program") {
         actions.startNewProgram();
-        return;
-      }
-
-      if (action === "open-archive") {
-        const archiveId = target.dataset.archiveId;
-        if (archiveId) actions.openArchivedProgram(archiveId);
-        return;
-      }
-
-      if (action === "export-archive") {
-        const archiveId = target.dataset.archiveId;
-        if (!archiveId) return;
-        const entry = (state.archive || []).find((item) => item.id === archiveId);
-        if (!entry || !entry.content) return;
-        const program = {
-          ...entry.content,
-          pasientNavn: entry.patientName || entry.content.pasientNavn || "",
-          pasientEpost: entry.email || entry.content.pasientEpost || "",
-        };
-        const tittel = (entry.patientName || "program")
-          .toLowerCase()
-          .replace(/[^a-z0-9\-]+/gi, "-")
-          .replace(/(^-|-$)+/g, "")
-          .slice(0, 48);
-        const blob = renderProgramPdf(program);
-        downloadBlob(blob, `${tittel || "program"}.pdf`);
         return;
       }
 

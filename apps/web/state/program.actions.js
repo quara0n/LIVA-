@@ -408,7 +408,6 @@
   }
 
   function loadProgram() {
-    state.archive = loadArchive();
     state.ui.panelView = "load";
     render.full();
   }
@@ -417,29 +416,7 @@
     state.program = createEmptyDraft();
     state.program.pasientNavn = (pasientNavn || "").trim();
     state.program.pasientEpost = (pasientEpost || "").trim();
-    state.ui.nameError = "";
     state.ui.panelView = "builder";
-    saveDraft(state.program);
-    render.full();
-  }
-
-  function openArchivedProgram(id) {
-    const archive = Array.isArray(state.archive) ? state.archive : [];
-    const entry = archive.find((item) => item.id === id);
-    if (!entry || !entry.content) return;
-    const content = { ...entry.content };
-    content.pasientNavn = entry.patientName || content.pasientNavn || "";
-    content.pasientEpost = entry.email || content.pasientEpost || "";
-    content.archiveId = entry.id;
-    state.ui.altSectionOpen = {};
-    state.ui.showMore = {};
-    state.ui.altPicker = null;
-    state.ui.detailsOpen = {};
-    state.ui.sekundar = {};
-    state.program = content;
-    state.ui.panelView = "builder";
-    state.ui.nameError = "";
-    saveActiveProgramId(entry.id);
     saveDraft(state.program);
     render.full();
   }

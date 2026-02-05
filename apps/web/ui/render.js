@@ -194,70 +194,28 @@
       <div class="program-startstate startstate">
         <div class="startstate-card">
           <div class="start-actions">
-            <button class="primary" data-action="create-program">Nytt program</button>
-            <button class="action-btn" data-action="load-program">Eksisterende program</button>
+            <button class="primary" data-action="create-program">Lag program</button>
+            <button class="action-btn" data-action="load-program">Hent program</button>
           </div>
-          <div class="startstate-patient">
-            <input
-              data-field="start-name"
-              type="text"
-              autocomplete="name"
-              placeholder="Navn"
-            />
-            <input
-              data-field="start-email"
-              type="email"
-              autocomplete="email"
-              placeholder="E-post (valgfritt)"
-            />
-          </div>
-        </div>
-      </div>
-    `;
-  }
-
-  function formatUpdatedAt(value) {
-    if (!value) return "";
-    const date = new Date(value);
-    if (Number.isNaN(date.getTime())) return "";
-    return date.toLocaleDateString("no-NO", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-  function renderLoadState() {
-    const archive = Array.isArray(state.archive) ? state.archive : [];
-    const rows = archive
-      .map((item) => {
-        const updatedAt = formatUpdatedAt(item.updatedAt);
-        return `
-          <div class="archive-row">
-            <div class="archive-meta">
-              <strong>${item.patientName || "Uten navn"}</strong>
-              ${updatedAt ? `<span class="hint">Sist oppdatert: ${updatedAt}</span>` : ""}
-            </div>
-            <div class="archive-actions">
-              <button class="action-btn" data-action="open-archive" data-archive-id="${item.id}">Åpne</button>
-              <button class="action-btn" data-action="export-archive" data-archive-id="${item.id}">PDF</button>
-            </div>
-          </div>
-        `;
-      })
-      .join("");
-
-    return `
-      <div class="program-loadstate startstate">
-        <div class="startstate-card archive-card">
-          ${rows || `<p class="hint">Ingen lagrede programmer.</p>`}
+          <input
+            data-field="start-name"
+            type="text"
+            autocomplete="name"
+            placeholder="Pasientnavn (valgfritt)"
+          />
+          <input
+            data-field="start-email"
+            type="email"
+            autocomplete="email"
+            placeholder="E-post (valgfritt)"
+          />
+          <p class="hint">Opprett eller hent program før redigering.</p>
         </div>
       </div>
     `;
   }
 
   function renderBuilder() {
-    const nameError = state.ui.nameError;
     return `
       <div class="program-canvas">
         <div class="panel-header program-header">
@@ -267,13 +225,6 @@
               data-action="edit-program-name"
               type="text"
               placeholder="Navn"
-            />
-            ${nameError ? `<span class="inline-error">${nameError}</span>` : ""}
-            <input
-              class="inline-input wide"
-              data-action="edit-program-email"
-              type="email"
-              placeholder="E-post (valgfritt)"
             />
             <button class="action-btn" data-action="save-program">Lagre</button>
             <button class="action-btn" data-action="start-new-program">Nytt program</button>
@@ -302,16 +253,8 @@
 
   function full() {
     const hasDraft = Boolean(state.program);
-    let panelView = state.ui.panelView || (hasDraft ? "builder" : "start");
-    if (hasDraft && panelView === "start") panelView = "builder";
-    if (!hasDraft && panelView === "builder") panelView = "start";
     if (programRootEl) {
-      programRootEl.innerHTML =
-        panelView === "builder"
-          ? renderBuilder()
-          : panelView === "load"
-            ? renderLoadState()
-            : renderStartState();
+      programRootEl.innerHTML = hasDraft ? renderBuilder() : renderStartState();
     }
 
     if (els.programTitleEl) {
@@ -334,7 +277,7 @@
         manglerUtforelse.length > 0;
     }
 
-    if (hasDraft && panelView === "builder" && programRootEl) {
+    if (hasDraft && programRootEl) {
       const notater = helpers.getNotaterSection();
       const notaterInput = programRootEl.querySelector(
         "[data-action='edit-notater']"
@@ -347,12 +290,6 @@
       );
       if (nameInput) {
         nameInput.value = state.program?.pasientNavn || "";
-      }
-      const emailInput = programRootEl.querySelector(
-        "[data-action='edit-program-email']"
-      );
-      if (emailInput) {
-        emailInput.value = state.program?.pasientEpost || "";
       }
     }
     renderLibrary();

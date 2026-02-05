@@ -26,7 +26,6 @@ const state = {
     altPicker: null,
     detailsOpen: {},
     sekundar: {},
-    nameError: "",
     panelView: "start",
   },
 };
@@ -63,6 +62,7 @@ const actions = createProgramActions({
   loadArchive,
   saveActiveProgramId,
   saveDraft,
+  loadDraft,
   render,
   showToast,
 });
@@ -79,10 +79,9 @@ async function loadSeeds() {
     throw new Error("Kunne ikke laste seed-data.");
   }
 
+  const draft = loadDraft();
   state.programTemplate = await programRes.json();
-  state.program = null;
-  state.ui.panelView = "start";
-  state.archive = loadArchive();
+  state.program = draft || null;
   state.library = await libraryRes.json();
 }
 

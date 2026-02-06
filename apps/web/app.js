@@ -1,17 +1,24 @@
 import { renderProgramPdf } from "../../src/pdf/render.js";
 import { createProgramActions } from "./state/program.actions.js";
+
 import {
   loadArchive,
+  loadDraft,
   saveActiveProgramId,
   saveArchive,
   saveDraft,
 } from "./state/program.storage.js";
+
 import { bindEvents } from "./ui/events.js";
 import { createRenderer } from "./ui/render.js";
 
 const DATA_PATHS = {
   program: "../../src/data/program.seed.json",
   library: "../../src/data/ovelsesbibliotek.seed.json",
+  templates: [
+    "../../src/data/templates/tennisalbue.json",
+    "../../src/data/templates/achilles_tendinopati.json",
+  ],
 };
 
 const state = {
@@ -19,6 +26,7 @@ const state = {
   programTemplate: null,
   archive: [],
   library: [],
+  templates: [],
   search: "",
   ui: {
     altSectionOpen: {},
@@ -27,6 +35,11 @@ const state = {
     detailsOpen: {},
     sekundar: {},
     panelView: "start",
+    templateOrigin: null,
+    loadOrigin: null,
+    startDetailsMode: null,
+    startDetailsName: "",
+    startDetailsEmail: "",
   },
 };
 
@@ -70,12 +83,18 @@ const actions = createProgramActions({
 render.setHelpers(actions);
 
 async function loadSeeds() {
-  const [programRes, libraryRes] = await Promise.all([
+  const templateRequests = DATA_PATHS.templates.map((path) => fetch(path));
+  const [programRes, libraryRes, ...templateRes] = await Promise.all([
     fetch(DATA_PATHS.program),
     fetch(DATA_PATHS.library),
+    ...templateRequests,
   ]);
 
-  if (!programRes.ok || !libraryRes.ok) {
+  if (
+    !programRes.ok ||
+    !libraryRes.ok ||
+    templateRes.some((res) => !res.ok)
+  ) {
     throw new Error("Kunne ikke laste seed-data.");
   }
 
@@ -83,6 +102,7 @@ async function loadSeeds() {
   state.programTemplate = await programRes.json();
   state.program = draft || null;
   state.library = await libraryRes.json();
+  state.templates = await Promise.all(templateRes.map((res) => res.json()));
 }
 
 async function init() {

@@ -67,6 +67,12 @@
       if (target.dataset.action === "edit-notater") {
         actions.setNotater(target.value);
       }
+      if (target.dataset.field === "start-name") {
+        actions.setStartDetailsName(target.value);
+      }
+      if (target.dataset.field === "start-email") {
+        actions.setStartDetailsEmail(target.value);
+      }
     });
 
     els.programRootEl.addEventListener("change", (event) => {
@@ -82,22 +88,102 @@
       const action = target.dataset.action;
       if (!action) return;
 
-      if (action === "create-program") {
-        const nameInput = els.programRootEl.querySelector(
-          "[data-field='start-name']"
-        );
-        const emailInput = els.programRootEl.querySelector(
-          "[data-field='start-email']"
-        );
-        actions.createProgramFromStart(
-          nameInput?.value || "",
-          emailInput?.value || ""
-        );
+      if (action === "open-start-details") {
+        actions.openStartDetails(target.dataset.mode);
+        return;
+      }
+
+      if (action === "start-details-cancel") {
+        actions.closeStartDetails();
+        return;
+      }
+
+      if (action === "start-details-confirm") {
+        const mode = state.ui.startDetailsMode || "new";
+        const name = state.ui.startDetailsName || "";
+        const email = state.ui.startDetailsEmail || "";
+        if (mode === "template") {
+          actions.openTemplates();
+        } else {
+          actions.createProgramFromStart(name, email);
+        }
+        return;
+      }
+
+      if (action === "start-template") {
+        actions.openTemplates();
+        return;
+      }
+
+      if (action === "close-templates") {
+        actions.closeTemplates();
+        return;
+      }
+
+      if (action === "apply-template") {
+        const templateId = target.dataset.templateId;
+        if (!templateId) {
+          showToast("Fant ikke valgt mal.");
+          return;
+        }
+        if (state.ui.templateOrigin === "builder" && state.program) {
+          const confirmed = window.confirm(
+            "Erstatt nåværende program med valgt mal?"
+          );
+          if (!confirmed) return;
+        }
+        if (state.ui.startDetailsMode === "template") {
+          actions.setStartDetailsName(state.ui.startDetailsName || "");
+          actions.setStartDetailsEmail(state.ui.startDetailsEmail || "");
+        }
+        actions.applyTemplate(templateId);
         return;
       }
 
       if (action === "load-program") {
         actions.loadProgram();
+        return;
+      }
+
+      if (action === "close-load") {
+        actions.closeLoad();
+        return;
+      }
+
+      if (action === "open-archive") {
+        const archiveId = target.dataset.archiveId;
+        if (!archiveId) {
+          showToast("Kunne ikke åpne arkivert program.");
+          return;
+        }
+        actions.openArchivedProgram(archiveId);
+        return;
+      }
+
+      if (action === "pdf-archive") {
+        const archiveId = target.dataset.archiveId;
+        if (!archiveId) {
+          showToast("Kunne ikke eksportere PDF.");
+          return;
+        }
+        const entry = Array.isArray(state.archive)
+          ? state.archive.find((item) => item.id === archiveId)
+          : null;
+        if (!entry || !entry.content) {
+          showToast("Kunne ikke eksportere PDF.");
+          return;
+        }
+        try {
+          const tittel = (entry.content?.tittel || entry.patientName || "program")
+            .toLowerCase()
+            .replace(/[^a-z0-9\-]+/gi, "-")
+            .replace(/(^-|-$)+/g, "")
+            .slice(0, 48);
+          const blob = renderProgramPdf(entry.content);
+          downloadBlob(blob, `${tittel || "program"}.pdf`);
+        } catch (_error) {
+          showToast("Kunne ikke eksportere PDF.");
+        }
         return;
       }
 
@@ -128,16 +214,14 @@
       if (event.key !== "Enter") return;
       if (target.dataset.field === "start-name" || target.dataset.field === "start-email") {
         event.preventDefault();
-        const nameInput = els.programRootEl.querySelector(
-          "[data-field='start-name']"
-        );
-        const emailInput = els.programRootEl.querySelector(
-          "[data-field='start-email']"
-        );
-        actions.createProgramFromStart(
-          nameInput?.value || "",
-          emailInput?.value || ""
-        );
+        const mode = state.ui.startDetailsMode || "new";
+        const name = state.ui.startDetailsName || "";
+        const email = state.ui.startDetailsEmail || "";
+        if (mode === "template") {
+          actions.openTemplates();
+        } else {
+          actions.createProgramFromStart(name, email);
+        }
       }
     });
   }

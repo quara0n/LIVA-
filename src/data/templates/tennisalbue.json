@@ -1,0 +1,65 @@
+{
+  "id": "tennisalbue",
+  "name": "Tennisalbue",
+  "description": "Skånsom startmal med fokus på kontrollert styrke og toleranse.",
+  "exercises": [
+    {
+      "exerciseId": "kneboy",
+      "dosage": {
+        "doseringstype": "reps_x_sett",
+        "reps": 8,
+        "sett": 3
+      },
+      "executionText": "Stå med føtter hoftebredde. Sett deg rolig ned og press opp igjen. Hold knær over tær.",
+      "progressions": [
+        {
+          "exerciseId": "goblet-kneboy",
+          "dosage": {
+            "doseringstype": "reps_x_sett",
+            "reps": 6,
+            "sett": 3
+          },
+          "executionText": "Hold en vekt tett mot brystet. Senk deg kontrollert ned og reis deg opp. Hold overkroppen stolt."
+        },
+        {
+          "exerciseId": "front-kneboy",
+          "dosage": {
+            "doseringstype": "reps_x_sett",
+            "reps": 6,
+            "sett": 3
+          },
+          "executionText": "Hold stang foran skuldrene. Senk deg kontrollert ned og press opp. Hold albuene høyt."
+        }
+      ],
+      "regressions": [
+        {
+          "exerciseId": "box-kneboy",
+          "dosage": {
+            "doseringstype": "reps_x_sett",
+            "reps": 8,
+            "sett": 2
+          },
+          "executionText": "Sett deg rolig ned på en boks og reis deg opp. Hold vekt jevnt på hele foten. Unngå å falle ned."
+        }
+      ]
+    },
+    {
+      "exerciseId": "wall-sit",
+      "dosage": {
+        "doseringstype": "reps_x_sett",
+        "reps": 20,
+        "sett": 3
+      },
+      "executionText": "Stå med rygg mot vegg og gå ned til 90 grader. Hold stillingen. Press hælene i gulvet."
+    },
+    {
+      "exerciseId": "balanse-stand",
+      "dosage": {
+        "doseringstype": "reps_x_sett",
+        "reps": 30,
+        "sett": 2
+      },
+      "executionText": "Stå på ett ben med lett bøy i kne. Hold blikket frem. Stabiliser hoften."
+    }
+  ]
+}

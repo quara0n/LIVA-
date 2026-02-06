@@ -395,12 +395,7 @@
   }
 
   function startNewProgram() {
-    state.ui.altSectionOpen = {};
-    state.ui.showMore = {};
-    state.ui.altPicker = null;
-    state.ui.detailsOpen = {};
-    state.ui.sekundar = {};
-    state.ui.nameError = "";
+    resetUiState();
     state.program = createEmptyDraft();
     state.ui.panelView = "builder";
     saveDraft(state.program);
@@ -408,17 +403,195 @@
   }
 
   function loadProgram() {
+    const archive = typeof loadArchive === "function" ? loadArchive() : [];
+    state.archive = Array.isArray(archive) ? archive : [];
+    state.ui.loadOrigin =
+      state.ui.panelView || (state.program ? "builder" : "start");
     state.ui.panelView = "load";
     render.full();
   }
 
+  function closeLoad() {
+    const fallback = state.program ? "builder" : "start";
+    state.ui.panelView = state.ui.loadOrigin || fallback;
+    state.ui.loadOrigin = null;
+    render.full();
+  }
+
+  function resetUiState() {
+    state.ui.altSectionOpen = {};
+    state.ui.showMore = {};
+    state.ui.altPicker = null;
+    state.ui.detailsOpen = {};
+    state.ui.sekundar = {};
+    state.ui.nameError = "";
+    state.ui.startDetailsMode = null;
+    state.ui.startDetailsName = "";
+    state.ui.startDetailsEmail = "";
+  }
+
   function createProgramFromStart(pasientNavn, pasientEpost) {
+    resetUiState();
     state.program = createEmptyDraft();
     state.program.pasientNavn = (pasientNavn || "").trim();
     state.program.pasientEpost = (pasientEpost || "").trim();
     state.ui.panelView = "builder";
     saveDraft(state.program);
     render.full();
+  }
+
+  function openTemplates() {
+    state.ui.templateOrigin =
+      state.ui.panelView || (state.program ? "builder" : "start");
+    state.ui.panelView = "templates";
+    render.full();
+  }
+
+  function closeTemplates() {
+    const fallback = state.program ? "builder" : "start";
+    state.ui.panelView = state.ui.templateOrigin || fallback;
+    state.ui.templateOrigin = null;
+    render.full();
+  }
+
+  function openStartDetails(mode) {
+    state.ui.startDetailsMode = mode === "template" ? "template" : "new";
+    state.ui.panelView = "start-details";
+    render.full();
+  }
+
+  function closeStartDetails() {
+    state.ui.panelView = "start";
+    state.ui.startDetailsMode = null;
+    state.ui.startDetailsName = "";
+    state.ui.startDetailsEmail = "";
+    render.full();
+  }
+
+  function setStartDetailsName(value) {
+    state.ui.startDetailsName = value || "";
+  }
+
+  function setStartDetailsEmail(value) {
+    state.ui.startDetailsEmail = value || "";
+  }
+
+  function normalizeTemplateDosage(dosage) {
+    return {
+      doseringstype: dosage?.doseringstype || "reps_x_sett",
+      reps: Number(dosage?.reps) || 0,
+      sett: Number(dosage?.sett) || 0,
+    };
+  }
+
+  function mapTemplateAlternatives(items, retning) {
+    return (items || [])
+      .map((item) => {
+        const master = getMasterById(item.exerciseId);
+        if (!master) return null;
+        return {
+          retning,
+          ovelseId: item.exerciseId,
+          navn: master.navn,
+          tagger: master.tagger || [],
+          utforelse: item.executionText || master.utforelseTekst || "",
+          dosering: normalizeTemplateDosage(item.dosage),
+          narBrukesPreset: "Når smerte og funksjon er akseptabel",
+        };
+      })
+      .filter(Boolean);
+  }
+
+  function applyTemplate(templateId) {
+    const templates = Array.isArray(state.templates) ? state.templates : [];
+    const template = templates.find((item) => item.id === templateId);
+    if (!template) {
+      showToast("Fant ikke valgt mal.");
+      return;
+    }
+
+    const draft = createEmptyDraft();
+    draft.tittel = template.name || draft.tittel;
+    const hoveddel = draft.seksjoner.find((s) => s.type === "hovedovelser");
+    if (!hoveddel) {
+      showToast("Kunne ikke opprette program fra mal.");
+      return;
+    }
+
+    hoveddel.ovelser = (template.exercises || [])
+      .map((exercise) => {
+        const master = getMasterById(exercise.exerciseId);
+        if (!master) return null;
+        const alternativer = [
+          ...mapTemplateAlternatives(exercise.progressions, "progresjon"),
+          ...mapTemplateAlternatives(exercise.regressions, "regresjon"),
+        ];
+        return {
+          ovelseInstansId: makeId("instans"),
+          ovelseId: exercise.exerciseId,
+          navn: master.navn,
+          utforelse: exercise.executionText || master.utforelseTekst || "",
+          dosering: normalizeTemplateDosage(exercise.dosage),
+          kommentar: "",
+          alternativer,
+        };
+      })
+      .filter(Boolean);
+
+    const pendingName = state.ui.startDetailsName || "";
+    const pendingEmail = state.ui.startDetailsEmail || "";
+    resetUiState();
+    state.program = draft;
+    if (pendingName || pendingEmail) {
+      state.program.pasientNavn = pendingName.trim();
+      state.program.pasientEpost = pendingEmail.trim();
+    }
+    state.ui.panelView = "builder";
+    state.ui.templateOrigin = null;
+    saveDraft(state.program);
+    render.full();
+  }
+  function openArchivedProgram(archivedProgramOrId) {
+    try {
+      const archive = Array.isArray(state.archive)
+        ? state.archive
+        : typeof loadArchive === "function"
+          ? loadArchive()
+          : [];
+      const entry =
+        typeof archivedProgramOrId === "string"
+          ? archive.find((item) => item.id === archivedProgramOrId)
+          : archivedProgramOrId;
+
+      if (!entry || !entry.content) {
+        showToast("Kunne ikke åpne arkivert program.");
+        return;
+      }
+
+      let content;
+      try {
+        content = JSON.parse(JSON.stringify(entry.content));
+      } catch (_error) {
+        showToast("Kunne ikke åpne arkivert program.");
+        return;
+      }
+
+      if (!content || !Array.isArray(content.seksjoner)) {
+        showToast("Kunne ikke åpne arkivert program.");
+        return;
+      }
+
+      state.program = content;
+      state.program.archiveId = entry.id || null;
+      state.program.pasientNavn = entry.patientName || state.program.pasientNavn || "";
+      state.program.pasientEpost = entry.email || state.program.pasientEpost || "";
+      state.ui.panelView = "builder";
+      saveActiveProgramId(state.program.archiveId);
+      saveDraft(state.program);
+      render.full();
+    } catch (_error) {
+      showToast("Kunne ikke åpne arkivert program.");
+    }
   }
 
   return {
@@ -453,5 +626,13 @@
     loadProgram,
     createProgramFromStart,
     openArchivedProgram,
+    openTemplates,
+    closeTemplates,
+    applyTemplate,
+    openStartDetails,
+    closeStartDetails,
+    setStartDetailsName,
+    setStartDetailsEmail,
+    closeLoad,
   };
 }

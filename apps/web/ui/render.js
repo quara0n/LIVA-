@@ -189,27 +189,137 @@
       .join("");
   }
 
+  function formatArchiveDate(value) {
+    if (!value) return "Ukjent dato";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "Ukjent dato";
+    return date.toLocaleDateString("no-NO", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+    });
+  }
+
+  function renderArchiveList() {
+    const archive = Array.isArray(state.archive) ? state.archive : [];
+    const rows = archive
+      .map((entry) => {
+        const name = entry?.patientName || "Ukjent navn";
+        const updatedAt = formatArchiveDate(entry?.updatedAt);
+        const entryId = entry?.id || "";
+        const disabled = entryId ? "" : "disabled";
+
+        return `
+        <div class="archive-row">
+          <div class="archive-meta">
+            <strong>${name}</strong>
+            <span class="tag">Sist oppdatert: ${updatedAt}</span>
+          </div>
+          <div class="archive-actions">
+            <button class="action-btn" data-action="open-archive" data-archive-id="${entryId}" ${disabled}>Åpne</button>
+            <button class="action-btn" data-action="pdf-archive" data-archive-id="${entryId}" ${disabled}>PDF</button>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
+    return `
+      <div class="program-startstate startstate">
+        <div class="startstate-card archive-card">
+          <div class="section-title">
+            <h3>Arkiv</h3>
+          </div>
+          ${rows || '<p class="hint">Ingen arkiverte program.</p>'}
+          <div class="start-actions">
+            <button class="action-btn" data-action="close-load">Tilbake</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderStartState() {
     return `
       <div class="program-startstate startstate">
         <div class="startstate-card">
           <div class="start-actions">
-            <button class="primary" data-action="create-program">Lag program</button>
-            <button class="action-btn" data-action="load-program">Hent program</button>
+            <div class="start-actions-row">
+              <button class="action-btn" data-action="open-start-details" data-mode="template">Start fra mal</button>
+              <button class="action-btn" data-action="load-program">Hent program</button>
+            </div>
+            <button class="primary" data-action="open-start-details" data-mode="new">Nytt program</button>
+          </div>
+          <p class="hint">Opprett eller hent program før redigering.</p>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderStartDetails() {
+    const mode = state.ui.startDetailsMode || "new";
+    const title = mode === "template" ? "Start fra mal" : "Nytt Program";
+    const buttonLabel = mode === "template" ? "Fortsett" : "Opprett";
+    return `
+      <div class="program-startstate startstate">
+        <div class="startstate-card">
+          <div class="section-title">
+            <h3>${title}</h3>
           </div>
           <input
             data-field="start-name"
             type="text"
             autocomplete="name"
             placeholder="Pasientnavn (valgfritt)"
+            value="${state.ui.startDetailsName || ""}"
           />
           <input
             data-field="start-email"
             type="email"
             autocomplete="email"
             placeholder="E-post (valgfritt)"
+            value="${state.ui.startDetailsEmail || ""}"
           />
-          <p class="hint">Opprett eller hent program før redigering.</p>
+          <div class="start-actions">
+            <button class="primary" data-action="start-details-confirm">${buttonLabel}</button>
+            <button class="action-btn" data-action="start-details-cancel">Tilbake</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderTemplatesList() {
+    const templates = Array.isArray(state.templates) ? state.templates : [];
+    const rows = templates
+      .map((template) => {
+        const description = template.description
+          ? `<span class="tag">${template.description}</span>`
+          : "";
+        return `
+        <div class="archive-row">
+          <div class="archive-meta">
+            <strong>${template.name}</strong>
+            ${description}
+          </div>
+          <div class="archive-actions">
+            <button class="action-btn" data-action="apply-template" data-template-id="${template.id}">Bruk mal</button>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
+    return `
+      <div class="program-startstate startstate">
+        <div class="startstate-card">
+          <div class="section-title">
+            <h3>Programmaler</h3>
+          </div>
+          ${rows || '<p class="hint">Ingen maler tilgjengelig.</p>'}
+          <div class="start-actions">
+            <button class="action-btn" data-action="close-templates">Tilbake</button>
+          </div>
         </div>
       </div>
     `;
@@ -228,6 +338,7 @@
             />
             <button class="action-btn" data-action="save-program">Lagre</button>
             <button class="action-btn" data-action="start-new-program">Nytt program</button>
+            <button class="action-btn" data-action="start-template">Start fra mal</button>
             <button class="action-btn" data-action="load-program">Hent program</button>
           </div>
         </div>
@@ -252,9 +363,22 @@
   }
 
   function full() {
+    const panelView = state.ui.panelView || "start";
     const hasDraft = Boolean(state.program);
+    const isBuilder = panelView === "builder" && hasDraft;
+
     if (programRootEl) {
-      programRootEl.innerHTML = hasDraft ? renderBuilder() : renderStartState();
+      if (panelView === "load") {
+        programRootEl.innerHTML = renderArchiveList();
+      } else if (panelView === "templates") {
+        programRootEl.innerHTML = renderTemplatesList();
+      } else if (panelView === "start-details") {
+        programRootEl.innerHTML = renderStartDetails();
+      } else if (isBuilder) {
+        programRootEl.innerHTML = renderBuilder();
+      } else {
+        programRootEl.innerHTML = renderStartState();
+      }
     }
 
     if (els.programTitleEl) {
@@ -266,18 +390,18 @@
     }
 
     const hoveddel = helpers.getHoveddelSection();
-    const manglerUtforelse = hasDraft
+    const manglerUtforelse = isBuilder
       ? helpers.finnOvelserUtenUtforelse(state.program)
       : [];
     if (els.exportBtn) {
       els.exportBtn.disabled =
-        !hasDraft ||
+        !isBuilder ||
         !hoveddel ||
         hoveddel.ovelser.length === 0 ||
         manglerUtforelse.length > 0;
     }
 
-    if (hasDraft && programRootEl) {
+    if (isBuilder && programRootEl) {
       const notater = helpers.getNotaterSection();
       const notaterInput = programRootEl.querySelector(
         "[data-action='edit-notater']"

@@ -1,0 +1,65 @@
+{
+  "id": "achilles_tendinopati",
+  "name": "Achilles tendinopati",
+  "description": "Generisk startmal for gradvis belastning av legg.",
+  "exercises": [
+    {
+      "exerciseId": "step-up",
+      "dosage": {
+        "doseringstype": "reps_x_sett",
+        "reps": 8,
+        "sett": 3
+      },
+      "executionText": "Trå opp på kasse med kontroll. Stram setet og rett ut hoften. Gå rolig ned igjen.",
+      "progressions": [
+        {
+          "exerciseId": "utfall",
+          "dosage": {
+            "doseringstype": "reps_x_sett",
+            "reps": 8,
+            "sett": 3
+          },
+          "executionText": "Ta et steg frem og senk deg kontrollert ned. Press opp til start. Hold overkroppen oppreist."
+        },
+        {
+          "exerciseId": "bulgarsk-split",
+          "dosage": {
+            "doseringstype": "reps_x_sett",
+            "reps": 6,
+            "sett": 3
+          },
+          "executionText": "Sett bakre fot på benk. Senk deg kontrollert ned og press opp igjen. Hold hoftene stabile."
+        }
+      ],
+      "regressions": [
+        {
+          "exerciseId": "stol-kneboy",
+          "dosage": {
+            "doseringstype": "reps_x_sett",
+            "reps": 8,
+            "sett": 2
+          },
+          "executionText": "Sett deg rolig ned på en stol og reis deg opp. Bruk armene minimalt. Hold knær over tær."
+        }
+      ]
+    },
+    {
+      "exerciseId": "leg-press",
+      "dosage": {
+        "doseringstype": "reps_x_sett",
+        "reps": 10,
+        "sett": 3
+      },
+      "executionText": "Plasser føttene på platen i hoftebredde. Press ut og senk kontrollert. Unngå å låse knærne."
+    },
+    {
+      "exerciseId": "straight-leg-raise",
+      "dosage": {
+        "doseringstype": "reps_x_sett",
+        "reps": 10,
+        "sett": 3
+      },
+      "executionText": "Ligg på ryggen og stram lårmuskelen. Løft strakt ben rolig opp og senk kontrollert. Hold korsryggen nøytral."
+    }
+  ]
+}

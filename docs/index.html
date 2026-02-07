@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LIVA – Programbygger (MVP)</title>
+    <link rel="stylesheet" href="css/base.css" />
+    <link rel="stylesheet" href="css/toolbar.css" />
+    <link rel="stylesheet" href="css/program.css" />
+    <link rel="stylesheet" href="css/library.css" />
+  </head>
+  <body>
+    <div class="app app-shell">
+      <header class="topbar app-toolbar">
+        <div class="title-block">
+          <div id="program-title" data-role="logo">
+            <img
+              class="logo-img"
+              src="/assets/brand/liva-logo.png"
+              alt="LIVA"
+              onerror="if(!this.dataset.retry){this.dataset.retry='1';this.src='/public/assets/brand/liva-logo.png';}else{this.replaceWith(document.createTextNode('LIVA'));}"
+            />
+          </div>
+          <span class="status" id="program-status" style="display: none;">Utkast</span>
+        </div>
+        <div class="toolbar-actions">
+          <button id="export-btn" class="primary" disabled>
+            Eksporter PDF
+          </button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel program panel-left program-shell">
+          <div id="program-root"></div>
+        </section>
+
+        <section class="panel library panel-right">
+          <div class="panel-header library-header">
+            <h2>Øvelsesbibliotek</h2>
+            <input
+              id="search-input"
+              type="search"
+              placeholder="Søk etter øvelse, tag eller alias"
+            />
+          </div>
+          <div class="library-grid library-list" id="library-grid"></div>
+        </section>
+      </main>
+    </div>
+
+    <div id="toast" class="toast" aria-live="polite"></div>
+
+    <script src="app.js" type="module"></script>
+  </body>
+</html>

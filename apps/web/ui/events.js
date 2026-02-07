@@ -79,6 +79,35 @@ export function bindEvents({
     });
   }
 
+  function updateStartDetailsConfirmState() {
+    if (!els.programRootEl) return;
+    if (state.ui.panelView !== "start-details") return;
+    const button = els.programRootEl.querySelector(
+      "[data-action='start-details-confirm']"
+    );
+    if (!button) return;
+    const purpose = state.ui.startDetailsPurpose || "newProgram";
+    const isTemplate = purpose === "template";
+    const templateId = state.ui.startDetailsTemplateId || "";
+    const useSamePatient = Boolean(state.ui.startDetailsUseSamePatient);
+    const existingName = state.patientName || state.program?.pasientNavn || "";
+    const name = useSamePatient ? existingName : state.ui.startDetailsName || "";
+    const nameOk = Boolean(String(name || "").trim());
+    const canConfirm = isTemplate ? nameOk && Boolean(templateId) : nameOk;
+    if (canConfirm) {
+      button.removeAttribute("disabled");
+    } else {
+      button.setAttribute("disabled", "disabled");
+    }
+  }
+
+  function confirmDiscardChanges() {
+    if (!state.hasUnsavedChanges) return true;
+    return window.confirm(
+      "Fortsette uten å lagre?\n\nDu har endringer som ikke er lagret. Hvis du fortsetter, blir de fjernet."
+    );
+  }
+
   async function sendProgramEmailWithPdf(emailData, blob, filename) {
     const to = String(emailData?.to || "").trim();
     const subject =
@@ -174,6 +203,21 @@ export function bindEvents({
         actions.setProgramName(target.value);
         return;
       }
+      if (target.dataset.action === "edit-program-email") {
+        actions.setProgramEmail(target.value);
+        if (state.ui.patientEmailError) {
+          actions.setPatientEmailError("");
+        }
+        return;
+      }
+      if (target.dataset.action === "edit-program-phone") {
+        actions.setProgramPhone(target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-program-diagnosis") {
+        actions.setProgramDiagnosis(target.value);
+        return;
+      }
       if (target.dataset.action === "edit-notater") {
         actions.setNotater(target.value);
       }
@@ -188,9 +232,17 @@ export function bindEvents({
       }
       if (target.dataset.field === "start-name") {
         actions.setStartDetailsName(target.value);
+        updateStartDetailsConfirmState();
       }
       if (target.dataset.field === "start-email") {
         actions.setStartDetailsEmail(target.value);
+        updateStartDetailsConfirmState();
+      }
+      if (target.dataset.action === "edit-archive-name") {
+        actions.setArchiveEditName(target.value);
+      }
+      if (target.dataset.action === "edit-archive-email") {
+        actions.setArchiveEditEmail(target.value);
       }
     });
 
@@ -200,14 +252,34 @@ export function bindEvents({
       if (action === "alt-preset") {
         actions.setAltPreset(target.value);
       }
+      if (action === "toggle-same-patient") {
+        actions.setStartDetailsUseSamePatient(target.checked);
+      }
     });
 
     els.programRootEl.addEventListener("click", async (event) => {
-      const target = event.target;
-      const action = target.dataset.action;
+      let target = event.target;
+      const actionTarget = target.closest("[data-action]");
+      const action = actionTarget?.dataset.action;
       if (!action) return;
+      target = actionTarget;
 
       if (action === "open-send-program") {
+        const email = String(state.patientEmail || state.program?.pasientEpost || "").trim();
+        if (!email) {
+          actions.setPatientDetailsOpen(true);
+          actions.setPatientEmailError("E-post må fylles inn for å sende");
+          window.setTimeout(() => {
+            const input = els.programRootEl?.querySelector(
+              "[data-action='edit-program-email']"
+            );
+            if (input) input.focus();
+          }, 0);
+          return;
+        }
+        if (state.ui.patientEmailError) {
+          actions.setPatientEmailError("");
+        }
         actions.openSendProgram();
         return;
       }
@@ -272,24 +344,53 @@ export function bindEvents({
       }
 
       if (action === "start-details-confirm") {
-        const mode = state.ui.startDetailsMode || "new";
+        const purpose = state.ui.startDetailsPurpose || "newProgram";
         const name = state.ui.startDetailsName || "";
         const email = state.ui.startDetailsEmail || "";
-        if (mode === "template") {
-          actions.openTemplates();
+        if (purpose === "template") {
+          const templateId = state.ui.startDetailsTemplateId || "";
+          if (!templateId) {
+            showToast("Velg en mal.");
+            return;
+          }
+          const useSamePatient = Boolean(state.ui.startDetailsUseSamePatient);
+          const existingName = state.patientName || state.program?.pasientNavn || "";
+          const existingEmail = state.patientEmail || state.program?.pasientEpost || "";
+          const nextName = useSamePatient ? existingName : name;
+          const nextEmail = useSamePatient ? existingEmail : email;
+          if (!String(nextName || "").trim()) {
+            showToast("Navn må fylles ut.");
+            return;
+          }
+          actions.applyTemplate(templateId, { name: nextName, email: nextEmail });
         } else {
+          if (!String(name || "").trim()) {
+            showToast("Navn må fylles ut.");
+            return;
+          }
           actions.createProgramFromStart(name, email);
         }
         return;
       }
 
       if (action === "start-template") {
-        actions.openTemplates();
+        if (!confirmDiscardChanges()) return;
+        actions.openStartDetails("template");
         return;
       }
 
       if (action === "close-templates") {
         actions.closeTemplates();
+        return;
+      }
+
+      if (action === "select-template") {
+        const templateId = target.dataset.templateId;
+        if (!templateId) {
+          showToast("Fant ikke valgt mal.");
+          return;
+        }
+        actions.setStartDetailsTemplateId(templateId);
         return;
       }
 
@@ -299,21 +400,14 @@ export function bindEvents({
           showToast("Fant ikke valgt mal.");
           return;
         }
-        if (state.ui.templateOrigin === "builder" && state.program) {
-          const confirmed = window.confirm(
-            "Erstatt nåværende program med valgt mal?"
-          );
-          if (!confirmed) return;
-        }
-        if (state.ui.startDetailsMode === "template") {
-          actions.setStartDetailsName(state.ui.startDetailsName || "");
-          actions.setStartDetailsEmail(state.ui.startDetailsEmail || "");
-        }
-        actions.applyTemplate(templateId);
+        const existingName = state.patientName || state.program?.pasientNavn || "";
+        const existingEmail = state.patientEmail || state.program?.pasientEpost || "";
+        actions.applyTemplate(templateId, { name: existingName, email: existingEmail });
         return;
       }
 
       if (action === "load-program") {
+        if (!confirmDiscardChanges()) return;
         actions.loadProgram();
         return;
       }
@@ -329,7 +423,28 @@ export function bindEvents({
           showToast("Kunne ikke åpne arkivert program.");
           return;
         }
+        if (!confirmDiscardChanges()) return;
         actions.openArchivedProgram(archiveId);
+        return;
+      }
+
+      if (action === "edit-archive") {
+        const archiveId = target.dataset.archiveId;
+        if (!archiveId) {
+          showToast("Kunne ikke redigere arkivert program.");
+          return;
+        }
+        actions.openArchiveEdit(archiveId);
+        return;
+      }
+
+      if (action === "save-archive-edit") {
+        actions.saveArchiveEdit();
+        return;
+      }
+
+      if (action === "cancel-archive-edit") {
+        actions.cancelArchiveEdit();
         return;
       }
 
@@ -365,7 +480,13 @@ export function bindEvents({
       }
 
       if (action === "start-new-program") {
-        actions.startNewProgram();
+        if (!confirmDiscardChanges()) return;
+        actions.openStartDetails("newProgram");
+        return;
+      }
+
+      if (action === "toggle-patient-details") {
+        actions.setPatientDetailsOpen(!state.ui.patientDetailsOpen);
         return;
       }
 
@@ -389,18 +510,50 @@ export function bindEvents({
 
     els.programRootEl.addEventListener("keydown", (event) => {
       const target = event.target;
+      if (
+        target &&
+        (target.matches("input, textarea") || target.isContentEditable)
+      ) {
+        return;
+      }
+      if (
+        target?.dataset?.action === "toggle-patient-details" &&
+        (event.key === "Enter" || event.key === " ")
+      ) {
+        event.preventDefault();
+        actions.setPatientDetailsOpen(!state.ui.patientDetailsOpen);
+        return;
+      }
       if (event.key !== "Enter") return;
       if (
         target.dataset.field === "start-name" ||
         target.dataset.field === "start-email"
       ) {
         event.preventDefault();
-        const mode = state.ui.startDetailsMode || "new";
+        const purpose = state.ui.startDetailsPurpose || "newProgram";
         const name = state.ui.startDetailsName || "";
         const email = state.ui.startDetailsEmail || "";
-        if (mode === "template") {
-          actions.openTemplates();
+        if (purpose === "template") {
+          const templateId = state.ui.startDetailsTemplateId || "";
+          if (!templateId) {
+            showToast("Velg en mal.");
+            return;
+          }
+          const useSamePatient = Boolean(state.ui.startDetailsUseSamePatient);
+          const existingName = state.patientName || state.program?.pasientNavn || "";
+          const existingEmail = state.patientEmail || state.program?.pasientEpost || "";
+          const nextName = useSamePatient ? existingName : name;
+          const nextEmail = useSamePatient ? existingEmail : email;
+          if (!String(nextName || "").trim()) {
+            showToast("Navn må fylles ut.");
+            return;
+          }
+          actions.applyTemplate(templateId, { name: nextName, email: nextEmail });
         } else {
+          if (!String(name || "").trim()) {
+            showToast("Navn må fylles ut.");
+            return;
+          }
           actions.createProgramFromStart(name, email);
         }
       }

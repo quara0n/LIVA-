@@ -208,6 +208,10 @@
         const updatedAt = formatArchiveDate(entry?.updatedAt);
         const entryId = entry?.id || "";
         const disabled = entryId ? "" : "disabled";
+        const isEditing = state.ui.archiveEditId === entryId;
+        const editName = state.ui.archiveEditName || "";
+        const editEmail = state.ui.archiveEditEmail || "";
+        const editError = state.ui.archiveEditError || "";
 
         return `
         <div class="archive-row">
@@ -218,8 +222,40 @@
           <div class="archive-actions">
             <button class="action-btn" data-action="open-archive" data-archive-id="${entryId}" ${disabled}>Åpne</button>
             <button class="action-btn" data-action="pdf-archive" data-archive-id="${entryId}" ${disabled}>PDF</button>
+            <button class="action-btn" data-action="edit-archive" data-archive-id="${entryId}" ${disabled}>Rediger</button>
           </div>
         </div>
+        ${
+          isEditing
+            ? `
+          <div class="archive-row">
+            <div class="archive-meta">
+              <input
+                class="inline-input"
+                data-action="edit-archive-name"
+                data-archive-id="${entryId}"
+                type="text"
+                placeholder="Pasientnavn"
+                value="${editName}"
+              />
+              <input
+                class="inline-input"
+                data-action="edit-archive-email"
+                data-archive-id="${entryId}"
+                type="email"
+                placeholder="E-post (valgfritt)"
+                value="${editEmail}"
+              />
+              ${editError ? `<div class="hint">${editError}</div>` : ""}
+            </div>
+            <div class="archive-actions">
+              <button class="action-btn" data-action="save-archive-edit" data-archive-id="${entryId}">Lagre</button>
+              <button class="action-btn" data-action="cancel-archive-edit" data-archive-id="${entryId}">Avbryt</button>
+            </div>
+          </div>
+        `
+            : ""
+        }
       `;
       })
       .join("");
@@ -257,31 +293,110 @@
   }
 
   function renderStartDetails() {
-    const mode = state.ui.startDetailsMode || "new";
-    const title = mode === "template" ? "Start fra mal" : "Nytt Program";
-    const buttonLabel = mode === "template" ? "Fortsett" : "Opprett";
+    const purpose = state.ui.startDetailsPurpose || "newProgram";
+    const isTemplate = purpose === "template";
+    const title = isTemplate ? "Start fra mal" : "Nytt Program";
+    const buttonLabel = isTemplate ? "Bruk mal" : "Opprett";
+    const existingName = state.patientName || state.program?.pasientNavn || "";
+    const existingEmail = state.patientEmail || state.program?.pasientEpost || "";
+    const useSamePatient = isTemplate ? Boolean(state.ui.startDetailsUseSamePatient) : false;
+    const selectedTemplateId = state.ui.startDetailsTemplateId || "";
+    const templates = Array.isArray(state.templates) ? state.templates : [];
+    const selectedTemplate = templates.find((template) => template.id === selectedTemplateId);
+    const effectiveName = useSamePatient ? existingName : state.ui.startDetailsName || "";
+    const nameOk = Boolean(String(effectiveName || "").trim());
+    const canConfirm = isTemplate ? nameOk && Boolean(selectedTemplateId) : nameOk;
+    const templateRows = templates
+      .map((template) => {
+        const description = template.description
+          ? `<span class="tag">${template.description}</span>`
+          : "";
+        const isSelected = template.id === selectedTemplateId;
+        return `
+        <div class="archive-row">
+          <div class="archive-meta">
+            <strong>${template.name}</strong>
+            ${description}
+          </div>
+          <div class="archive-actions">
+            <button class="action-btn" data-action="select-template" data-template-id="${template.id}">
+              ${isSelected ? "Valgt" : "Velg"}
+            </button>
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+
     return `
       <div class="program-startstate startstate">
         <div class="startstate-card">
           <div class="section-title">
             <h3>${title}</h3>
           </div>
-          <input
-            data-field="start-name"
-            type="text"
-            autocomplete="name"
-            placeholder="Pasientnavn (valgfritt)"
-            value="${state.ui.startDetailsName || ""}"
-          />
-          <input
-            data-field="start-email"
-            type="email"
-            autocomplete="email"
-            placeholder="E-post (valgfritt)"
-            value="${state.ui.startDetailsEmail || ""}"
-          />
+          ${
+            isTemplate
+              ? `
+            <label class="toggle-row">
+              <input
+                type="checkbox"
+                data-action="toggle-same-patient"
+                ${useSamePatient ? "checked" : ""}
+              />
+              Bruk samme pasient
+            </label>
+            ${
+              useSamePatient
+                ? `
+              <div class="start-details-locked">
+                <strong>${existingName || "Ingen pasient valgt"}</strong>
+                <span>${existingEmail ? `E-post: ${existingEmail}` : "E-post: mangler"}</span>
+              </div>
+            `
+                : `
+              <input
+                data-field="start-name"
+                type="text"
+                autocomplete="name"
+                placeholder="Pasientnavn"
+                value="${state.ui.startDetailsName || ""}"
+              />
+              <input
+                data-field="start-email"
+                type="email"
+                autocomplete="email"
+                placeholder="E-post (valgfritt)"
+                value="${state.ui.startDetailsEmail || ""}"
+              />
+            `
+            }
+            <div class="section-title">
+              <h4>Velg mal</h4>
+            </div>
+            ${templateRows || '<p class="hint">Ingen maler tilgjengelig.</p>'}
+            ${selectedTemplate ? `<p class="hint">Valgt: ${selectedTemplate.name}</p>` : ""}
+          `
+              : `
+            <input
+              data-field="start-name"
+              type="text"
+              autocomplete="name"
+              placeholder="Pasientnavn"
+              value="${state.ui.startDetailsName || ""}"
+            />
+            <input
+              data-field="start-email"
+              type="email"
+              autocomplete="email"
+              placeholder="E-post (valgfritt)"
+              value="${state.ui.startDetailsEmail || ""}"
+            />
+          `
+          }
           <div class="start-actions">
-            <button class="primary" data-action="start-details-confirm">${buttonLabel}</button>
+            <button class="primary" data-action="start-details-confirm" ${
+              canConfirm ? "" : "disabled"
+            }>${buttonLabel}</button>
             <button class="action-btn" data-action="start-details-cancel">Tilbake</button>
           </div>
         </div>
@@ -450,7 +565,9 @@
     }
 
     if (els.programTitleEl) {
-      els.programTitleEl.textContent = state.program?.tittel || "Program";
+      if (els.programTitleEl.dataset?.role !== "logo") {
+        els.programTitleEl.textContent = state.program?.tittel || "Program";
+      }
     }
     if (els.programStatusEl) {
       els.programStatusEl.textContent =

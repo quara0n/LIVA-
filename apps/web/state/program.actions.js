@@ -18,6 +18,14 @@
     return new Date().toISOString();
   }
 
+  function setHasUnsavedChanges(value) {
+    state.hasUnsavedChanges = Boolean(value);
+  }
+
+  function markUnsavedChanges() {
+    state.hasUnsavedChanges = true;
+  }
+
   const SEND_PROGRAM_DEFAULT_SUBJECT = "Ditt treningsprogram";
   const SEND_PROGRAM_DEFAULT_MESSAGE =
     "Hei,\n\nHer er treningsprogrammet vi har laget sammen.\n\nTa kontakt hvis du har spørsmål.\n\nVennlig hilsen";
@@ -59,6 +67,8 @@
       oppdatertTid: createdAt,
       pasientNavn: "",
       pasientEpost: "",
+      pasientTelefon: "",
+      pasientDiagnose: "",
       archiveId: null,
       seksjoner: baseSections.map((seksjon) => ({
         ...seksjon,
@@ -144,6 +154,7 @@
     };
 
     hoveddel.ovelser.push(instans);
+    markUnsavedChanges();
     saveDraft(state.program);
     render.full();
   }
@@ -154,6 +165,7 @@
       (o) => o.ovelseInstansId !== instansId
     );
     delete state.ui.altSectionOpen[instansId];
+    markUnsavedChanges();
     saveDraft(state.program);
     render.full();
   }
@@ -170,6 +182,7 @@
     const [item] = clone.splice(index, 1);
     clone.splice(nextIndex, 0, item);
     hoveddel.ovelser = clone;
+    markUnsavedChanges();
     saveDraft(state.program);
     render.full();
   }
@@ -183,6 +196,7 @@
     } else if (field === "kommentar") {
       instans.kommentar = value;
     }
+    markUnsavedChanges();
     saveDraft(state.program);
   }
 
@@ -282,6 +296,7 @@
 
     state.ui.altPicker = null;
     state.ui.altSectionOpen[picker.instansId] = null;
+    markUnsavedChanges();
     saveDraft(state.program);
     render.full();
   }
@@ -295,6 +310,7 @@
     const notater = getNotaterSection();
     if (!notater) return;
     notater.seksjonNotat = value;
+    markUnsavedChanges();
     saveDraft(state.program);
   }
 
@@ -313,6 +329,7 @@
     if (field === "reps" || field === "sett") {
       alt.dosering[field] = Number(value) || 0;
     }
+    markUnsavedChanges();
     saveDraft(state.program);
   }
 
@@ -328,6 +345,8 @@
   function setProgramName(value) {
     if (!state.program) return;
     state.program.pasientNavn = value;
+    state.patientName = state.program.pasientNavn || "";
+    markUnsavedChanges();
     if (state.ui.nameError) {
       state.ui.nameError = "";
       render.full();
@@ -338,6 +357,24 @@
   function setProgramEmail(value) {
     if (!state.program) return;
     state.program.pasientEpost = value;
+    state.patientEmail = state.program.pasientEpost || "";
+    markUnsavedChanges();
+    saveDraft(state.program);
+  }
+
+  function setProgramPhone(value) {
+    if (!state.program) return;
+    state.program.pasientTelefon = value || "";
+    state.patientPhone = state.program.pasientTelefon || "";
+    markUnsavedChanges();
+    saveDraft(state.program);
+  }
+
+  function setProgramDiagnosis(value) {
+    if (!state.program) return;
+    state.program.pasientDiagnose = value || "";
+    state.patientDiagnosis = state.program.pasientDiagnose || "";
+    markUnsavedChanges();
     saveDraft(state.program);
   }
 
@@ -394,6 +431,7 @@
     state.archive = archive;
     saveArchive(archive);
     saveDraft(state.program);
+    setHasUnsavedChanges(false);
     showToast("Program lagret.");
     render.full();
   }
@@ -401,6 +439,11 @@
   function startNewProgram() {
     resetUiState();
     state.program = createEmptyDraft();
+    state.patientName = "";
+    state.patientEmail = "";
+    state.patientPhone = "";
+    state.patientDiagnosis = "";
+    setHasUnsavedChanges(false);
     state.ui.panelView = "builder";
     saveDraft(state.program);
     render.full();
@@ -422,6 +465,70 @@
     render.full();
   }
 
+  function isValidEmail(value) {
+    const email = String(value || "").trim();
+    if (!email) return true;
+    const validator = document.createElement("input");
+    validator.type = "email";
+    validator.value = email;
+    return validator.checkValidity();
+  }
+
+  function openArchiveEdit(entryId) {
+    const entry = (state.archive || []).find((item) => item.id === entryId);
+    if (!entry) return;
+    state.ui.archiveEditId = entryId;
+    state.ui.archiveEditName = entry.patientName || "";
+    state.ui.archiveEditEmail = entry.email || "";
+    state.ui.archiveEditError = "";
+    render.full();
+  }
+
+  function cancelArchiveEdit() {
+    state.ui.archiveEditId = null;
+    state.ui.archiveEditName = "";
+    state.ui.archiveEditEmail = "";
+    state.ui.archiveEditError = "";
+    render.full();
+  }
+
+  function setArchiveEditName(value) {
+    state.ui.archiveEditName = value || "";
+  }
+
+  function setArchiveEditEmail(value) {
+    state.ui.archiveEditEmail = value || "";
+  }
+
+  function saveArchiveEdit() {
+    const entryId = state.ui.archiveEditId;
+    if (!entryId) return;
+    const name = String(state.ui.archiveEditName || "").trim();
+    const email = String(state.ui.archiveEditEmail || "").trim();
+    if (!name) {
+      state.ui.archiveEditError = "Pasientnavn må fylles ut.";
+      render.full();
+      return;
+    }
+    if (!isValidEmail(email)) {
+      state.ui.archiveEditError = "E-post er ugyldig.";
+      render.full();
+      return;
+    }
+    const archive = Array.isArray(state.archive) ? [...state.archive] : [];
+    const index = archive.findIndex((item) => item.id === entryId);
+    if (index < 0) return;
+    archive[index] = {
+      ...archive[index],
+      patientName: name,
+      email,
+      updatedAt: nowIso(),
+    };
+    state.archive = archive;
+    saveArchive(archive);
+    cancelArchiveEdit();
+  }
+
   function resetUiState() {
     state.ui.altSectionOpen = {};
     state.ui.showMore = {};
@@ -429,9 +536,17 @@
     state.ui.detailsOpen = {};
     state.ui.sekundar = {};
     state.ui.nameError = "";
-    state.ui.startDetailsMode = null;
+    state.ui.startDetailsPurpose = null;
     state.ui.startDetailsName = "";
     state.ui.startDetailsEmail = "";
+    state.ui.startDetailsUseSamePatient = false;
+    state.ui.startDetailsTemplateId = "";
+    state.ui.patientDetailsOpen = false;
+    state.ui.patientEmailError = "";
+    state.ui.archiveEditId = null;
+    state.ui.archiveEditName = "";
+    state.ui.archiveEditEmail = "";
+    state.ui.archiveEditError = "";
     state.ui.sendProgram = {
       isOpen: false,
       to: "",
@@ -475,6 +590,13 @@
     state.program = createEmptyDraft();
     state.program.pasientNavn = (pasientNavn || "").trim();
     state.program.pasientEpost = (pasientEpost || "").trim();
+    state.program.pasientTelefon = "";
+    state.program.pasientDiagnose = "";
+    state.patientName = state.program.pasientNavn || "";
+    state.patientEmail = state.program.pasientEpost || "";
+    state.patientPhone = state.program.pasientTelefon || "";
+    state.patientDiagnosis = state.program.pasientDiagnose || "";
+    setHasUnsavedChanges(false);
     state.ui.panelView = "builder";
     saveDraft(state.program);
     render.full();
@@ -494,17 +616,25 @@
     render.full();
   }
 
-  function openStartDetails(mode) {
-    state.ui.startDetailsMode = mode === "template" ? "template" : "new";
+  function openStartDetails(purpose) {
+    const nextPurpose = purpose === "template" ? "template" : "newProgram";
+    const hasExistingPatient = Boolean(state.patientName || state.program?.pasientNavn);
+    state.ui.startDetailsPurpose = nextPurpose;
     state.ui.panelView = "start-details";
+    state.ui.startDetailsUseSamePatient = nextPurpose === "template" && hasExistingPatient;
+    state.ui.startDetailsTemplateId = "";
+    state.ui.startDetailsName = "";
+    state.ui.startDetailsEmail = "";
     render.full();
   }
 
   function closeStartDetails() {
     state.ui.panelView = "start";
-    state.ui.startDetailsMode = null;
+    state.ui.startDetailsPurpose = null;
     state.ui.startDetailsName = "";
     state.ui.startDetailsEmail = "";
+    state.ui.startDetailsUseSamePatient = false;
+    state.ui.startDetailsTemplateId = "";
     render.full();
   }
 
@@ -514,6 +644,26 @@
 
   function setStartDetailsEmail(value) {
     state.ui.startDetailsEmail = value || "";
+  }
+
+  function setPatientDetailsOpen(value) {
+    state.ui.patientDetailsOpen = Boolean(value);
+    render.full();
+  }
+
+  function setPatientEmailError(message) {
+    state.ui.patientEmailError = message || "";
+    render.full();
+  }
+
+  function setStartDetailsUseSamePatient(value) {
+    state.ui.startDetailsUseSamePatient = Boolean(value);
+    render.full();
+  }
+
+  function setStartDetailsTemplateId(value) {
+    state.ui.startDetailsTemplateId = value || "";
+    render.full();
   }
 
   function normalizeTemplateDosage(dosage) {
@@ -542,7 +692,7 @@
       .filter(Boolean);
   }
 
-  function applyTemplate(templateId) {
+  function applyTemplate(templateId, patientInfo = {}) {
     const templates = Array.isArray(state.templates) ? state.templates : [];
     const template = templates.find((item) => item.id === templateId);
     if (!template) {
@@ -578,16 +728,23 @@
       })
       .filter(Boolean);
 
-    const pendingName = state.ui.startDetailsName || "";
-    const pendingEmail = state.ui.startDetailsEmail || "";
+    const pendingName = patientInfo.name || state.ui.startDetailsName || "";
+    const pendingEmail = patientInfo.email || state.ui.startDetailsEmail || "";
     resetUiState();
     state.program = draft;
     if (pendingName || pendingEmail) {
       state.program.pasientNavn = pendingName.trim();
       state.program.pasientEpost = pendingEmail.trim();
     }
+    state.program.pasientTelefon = "";
+    state.program.pasientDiagnose = "";
+    state.patientName = state.program.pasientNavn || "";
+    state.patientEmail = state.program.pasientEpost || "";
+    state.patientPhone = state.program.pasientTelefon || "";
+    state.patientDiagnosis = state.program.pasientDiagnose || "";
     state.ui.panelView = "builder";
     state.ui.templateOrigin = null;
+    setHasUnsavedChanges(false);
     saveDraft(state.program);
     render.full();
   }
@@ -625,6 +782,13 @@
       state.program.archiveId = entry.id || null;
       state.program.pasientNavn = entry.patientName || state.program.pasientNavn || "";
       state.program.pasientEpost = entry.email || state.program.pasientEpost || "";
+      state.program.pasientTelefon = state.program.pasientTelefon || "";
+      state.program.pasientDiagnose = state.program.pasientDiagnose || "";
+      state.patientName = state.program.pasientNavn || "";
+      state.patientEmail = state.program.pasientEpost || "";
+      state.patientPhone = state.program.pasientTelefon || "";
+      state.patientDiagnosis = state.program.pasientDiagnose || "";
+      setHasUnsavedChanges(false);
       state.ui.panelView = "builder";
       saveActiveProgramId(state.program.archiveId);
       saveDraft(state.program);
@@ -661,6 +825,8 @@
     setAltCustom,
     setProgramName,
     setProgramEmail,
+    setProgramPhone,
+    setProgramDiagnosis,
     saveProgram,
     startNewProgram,
     loadProgram,
@@ -673,7 +839,16 @@
     closeStartDetails,
     setStartDetailsName,
     setStartDetailsEmail,
+    setStartDetailsUseSamePatient,
+    setStartDetailsTemplateId,
+    setPatientDetailsOpen,
+    setPatientEmailError,
     closeLoad,
+    openArchiveEdit,
+    cancelArchiveEdit,
+    setArchiveEditName,
+    setArchiveEditEmail,
+    saveArchiveEdit,
     openSendProgram,
     closeSendProgram,
     setSendProgramField,

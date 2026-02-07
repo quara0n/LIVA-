@@ -28,6 +28,11 @@ const state = {
   library: [],
   templates: [],
   search: "",
+  patientName: "",
+  patientEmail: "",
+  patientPhone: "",
+  patientDiagnosis: "",
+  hasUnsavedChanges: false,
   ui: {
     altSectionOpen: {},
     showMore: {},
@@ -37,9 +42,17 @@ const state = {
     panelView: "start",
     templateOrigin: null,
     loadOrigin: null,
-    startDetailsMode: null,
+    startDetailsPurpose: null,
     startDetailsName: "",
     startDetailsEmail: "",
+    startDetailsUseSamePatient: false,
+    startDetailsTemplateId: "",
+    patientDetailsOpen: false,
+    patientEmailError: "",
+    archiveEditId: null,
+    archiveEditName: "",
+    archiveEditEmail: "",
+    archiveEditError: "",
     sendProgram: {
       isOpen: false,
       to: "",
@@ -108,6 +121,11 @@ async function loadSeeds() {
   const draft = loadDraft();
   state.programTemplate = await programRes.json();
   state.program = draft || null;
+  state.patientName = draft?.pasientNavn || "";
+  state.patientEmail = draft?.pasientEpost || "";
+  state.patientPhone = draft?.pasientTelefon || "";
+  state.patientDiagnosis = draft?.pasientDiagnose || "";
+  state.hasUnsavedChanges = false;
   state.library = await libraryRes.json();
   state.templates = await Promise.all(templateRes.map((res) => res.json()));
 }

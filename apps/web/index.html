@@ -13,8 +13,15 @@
     <div class="app app-shell">
       <header class="topbar app-toolbar">
         <div class="title-block">
-          <h1 id="program-title">Program</h1>
-          <span class="status" id="program-status">Utkast</span>
+          <div id="program-title" data-role="logo">
+            <img
+              class="logo-img"
+              src="/assets/brand/liva-logo.png"
+              alt="LIVA"
+              onerror="if(!this.dataset.retry){this.dataset.retry='1';this.src='/public/assets/brand/liva-logo.png';}else{this.replaceWith(document.createTextNode('LIVA'));}"
+            />
+          </div>
+          <span class="status" id="program-status" style="display: none;">Utkast</span>
         </div>
         <div class="toolbar-actions">
           <button id="export-btn" class="primary" disabled>

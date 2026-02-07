@@ -40,6 +40,13 @@ const state = {
     startDetailsMode: null,
     startDetailsName: "",
     startDetailsEmail: "",
+    sendProgram: {
+      isOpen: false,
+      to: "",
+      subject: "Ditt treningsprogram",
+      message:
+        "Hei,\n\nHer er treningsprogrammet vi har laget sammen.\n\nTa kontakt hvis du har spørsmål.\n\nVennlig hilsen",
+    },
   },
 };
 

@@ -1,4 +1,11 @@
-﻿export function bindEvents({ state, els, actions, render, showToast, renderProgramPdf }) {
+export function bindEvents({
+  state,
+  els,
+  actions,
+  render,
+  showToast,
+  renderProgramPdf,
+}) {
   function downloadBlob(blob, filename) {
     const link = document.createElement("a");
     const url = URL.createObjectURL(blob);
@@ -8,6 +15,113 @@
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
+  }
+
+  function buildProgramFilename(program, fallback = "program") {
+    return (program?.tittel || fallback)
+      .toLowerCase()
+      .replace(/[^a-z0-9\-]+/gi, "-")
+      .replace(/(^-|-$)+/g, "")
+      .slice(0, 48);
+  }
+
+  function printPdfBlob(blob) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const popup = window.open(url, "_blank", "noopener");
+
+      if (!popup) {
+        URL.revokeObjectURL(url);
+        reject(new Error("Kunne ikke åpne print-dialog."));
+        return;
+      }
+
+      let printed = false;
+      const cleanup = () => {
+        URL.revokeObjectURL(url);
+      };
+
+      const printOnce = () => {
+        if (printed || popup.closed) return;
+        printed = true;
+        popup.focus();
+        try {
+          popup.print();
+          resolve();
+        } catch (error) {
+          reject(error);
+        } finally {
+          window.setTimeout(cleanup, 1000);
+        }
+      };
+
+      const startedAt = Date.now();
+      const poll = window.setInterval(() => {
+        if (popup.closed) {
+          window.clearInterval(poll);
+          cleanup();
+          return;
+        }
+        try {
+          if (popup.document?.readyState === "complete") {
+            window.clearInterval(poll);
+            window.setTimeout(printOnce, 400);
+            return;
+          }
+        } catch (_error) {
+          // Access can fail for PDF viewer; fall back to time-based print.
+        }
+        if (Date.now() - startedAt > 3000) {
+          window.clearInterval(poll);
+          printOnce();
+        }
+      }, 200);
+    });
+  }
+
+  async function sendProgramEmailWithPdf(emailData, blob, filename) {
+    const to = String(emailData?.to || "").trim();
+    const subject =
+      String(emailData?.subject || "").trim() || "Ditt treningsprogram";
+    const message = String(emailData?.message || "").trim();
+
+    if (!to) {
+      throw new Error("Fyll inn e-postadresse i feltet Til.");
+    }
+
+    const validator = document.createElement("input");
+    validator.type = "email";
+    validator.value = to;
+    if (!validator.checkValidity()) {
+      throw new Error("E-postadressen er ugyldig.");
+    }
+
+    const file = new File([blob], filename, { type: "application/pdf" });
+    if (
+      navigator.share &&
+      navigator.canShare &&
+      navigator.canShare({ files: [file] })
+    ) {
+      await navigator.share({
+        title: subject,
+        text: `${message}\n\nTil: ${to}`,
+        files: [file],
+      });
+      return;
+    }
+
+    const mailtoUrl = `mailto:${encodeURIComponent(
+      to
+    )}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(
+      message
+    )}`;
+    const mailtoLink = document.createElement("a");
+    mailtoLink.href = mailtoUrl;
+    mailtoLink.rel = "noopener";
+    document.body.appendChild(mailtoLink);
+    mailtoLink.click();
+    mailtoLink.remove();
+    downloadBlob(blob, filename);
   }
 
   if (els.searchInputEl) {
@@ -24,11 +138,7 @@
         showToast("Eksport stoppet: utførelse mangler på én eller flere øvelser.");
         return;
       }
-      const tittel = (state.program?.tittel || "program")
-        .toLowerCase()
-        .replace(/[^a-z0-9\-]+/gi, "-")
-        .replace(/(^-|-$)+/g, "")
-        .slice(0, 48);
+      const tittel = buildProgramFilename(state.program, "program");
       const blob = renderProgramPdf(state.program);
       downloadBlob(blob, `${tittel || "program"}.pdf`);
     });
@@ -67,6 +177,15 @@
       if (target.dataset.action === "edit-notater") {
         actions.setNotater(target.value);
       }
+      if (target.dataset.action === "send-program-to") {
+        actions.setSendProgramField("to", target.value);
+      }
+      if (target.dataset.action === "send-program-subject") {
+        actions.setSendProgramField("subject", target.value);
+      }
+      if (target.dataset.action === "send-program-message") {
+        actions.setSendProgramField("message", target.value);
+      }
       if (target.dataset.field === "start-name") {
         actions.setStartDetailsName(target.value);
       }
@@ -83,10 +202,64 @@
       }
     });
 
-    els.programRootEl.addEventListener("click", (event) => {
+    els.programRootEl.addEventListener("click", async (event) => {
       const target = event.target;
       const action = target.dataset.action;
       if (!action) return;
+
+      if (action === "open-send-program") {
+        actions.openSendProgram();
+        return;
+      }
+
+      if (action === "send-program-cancel") {
+        if (target.classList.contains("send-program-modal-backdrop")) {
+          actions.closeSendProgram();
+          return;
+        }
+        if (target.closest(".send-program-modal-actions")) {
+          actions.closeSendProgram();
+          return;
+        }
+      }
+
+      if (action === "send-program-submit") {
+        const mangler = actions.finnOvelserUtenUtforelse(state.program);
+        if (mangler.length > 0) {
+          showToast("Eksport stoppet: utførelse mangler på én eller flere øvelser.");
+          return;
+        }
+        try {
+          const tittel = buildProgramFilename(state.program, "program");
+          const filename = `${tittel || "program"}.pdf`;
+          const blob = renderProgramPdf(state.program);
+          await sendProgramEmailWithPdf(state.ui.sendProgram || {}, blob, filename);
+          actions.closeSendProgram();
+          showToast("Program sendt på e-post");
+        } catch (error) {
+          const message =
+            error instanceof Error
+              ? error.message
+              : "Kunne ikke sende program på e-post.";
+          showToast(message || "Kunne ikke sende program på e-post.");
+        }
+        return;
+      }
+
+      if (action === "print-program") {
+        const mangler = actions.finnOvelserUtenUtforelse(state.program);
+        if (mangler.length > 0) {
+          showToast("Eksport stoppet: utførelse mangler på én eller flere øvelser.");
+          return;
+        }
+        try {
+          const blob = renderProgramPdf(state.program);
+          await printPdfBlob(blob);
+        } catch (_error) {
+          showToast("Kunne ikke åpne print-dialog.");
+        }
+        return;
+      }
 
       if (action === "open-start-details") {
         actions.openStartDetails(target.dataset.mode);
@@ -174,11 +347,10 @@
           return;
         }
         try {
-          const tittel = (entry.content?.tittel || entry.patientName || "program")
-            .toLowerCase()
-            .replace(/[^a-z0-9\-]+/gi, "-")
-            .replace(/(^-|-$)+/g, "")
-            .slice(0, 48);
+          const tittel = buildProgramFilename(
+            entry.content,
+            entry.patientName || "program"
+          );
           const blob = renderProgramPdf(entry.content);
           downloadBlob(blob, `${tittel || "program"}.pdf`);
         } catch (_error) {
@@ -201,9 +373,15 @@
       if (action === "remove") actions.removeExercise(instansId);
       if (action === "move-up") actions.moveExercise(instansId, -1);
       if (action === "move-down") actions.moveExercise(instansId, 1);
-      if (action === "toggle-alt") actions.toggleAltSection(instansId, target.dataset.retning);
-      if (action === "toggle-more") actions.toggleShowMore(instansId, target.dataset.retning);
-      if (action === "add-alt") actions.openAltPicker(instansId, target.dataset.retning, target.dataset.altId);
+      if (action === "toggle-alt") {
+        actions.toggleAltSection(instansId, target.dataset.retning);
+      }
+      if (action === "toggle-more") {
+        actions.toggleShowMore(instansId, target.dataset.retning);
+      }
+      if (action === "add-alt") {
+        actions.openAltPicker(instansId, target.dataset.retning, target.dataset.altId);
+      }
       if (action === "alt-cancel") actions.cancelAltPicker();
       if (action === "alt-save") actions.saveAltPicker();
       if (action === "toggle-details") actions.toggleDetails(instansId);
@@ -212,7 +390,10 @@
     els.programRootEl.addEventListener("keydown", (event) => {
       const target = event.target;
       if (event.key !== "Enter") return;
-      if (target.dataset.field === "start-name" || target.dataset.field === "start-email") {
+      if (
+        target.dataset.field === "start-name" ||
+        target.dataset.field === "start-email"
+      ) {
         event.preventDefault();
         const mode = state.ui.startDetailsMode || "new";
         const name = state.ui.startDetailsName || "";
@@ -236,5 +417,4 @@
       actions.addExercise(master);
     });
   }
-
 }

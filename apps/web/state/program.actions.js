@@ -18,6 +18,10 @@
     return new Date().toISOString();
   }
 
+  const SEND_PROGRAM_DEFAULT_SUBJECT = "Ditt treningsprogram";
+  const SEND_PROGRAM_DEFAULT_MESSAGE =
+    "Hei,\n\nHer er treningsprogrammet vi har laget sammen.\n\nTa kontakt hvis du har spørsmål.\n\nVennlig hilsen";
+
   function createEmptyDraft() {
     const template = state.programTemplate;
     const baseSections =
@@ -428,6 +432,42 @@
     state.ui.startDetailsMode = null;
     state.ui.startDetailsName = "";
     state.ui.startDetailsEmail = "";
+    state.ui.sendProgram = {
+      isOpen: false,
+      to: "",
+      subject: SEND_PROGRAM_DEFAULT_SUBJECT,
+      message: SEND_PROGRAM_DEFAULT_MESSAGE,
+    };
+  }
+
+  function openSendProgram() {
+    const pasientEpost = String(state.program?.pasientEpost || "").trim();
+    state.ui.sendProgram = {
+      isOpen: true,
+      to: pasientEpost,
+      subject: SEND_PROGRAM_DEFAULT_SUBJECT,
+      message: SEND_PROGRAM_DEFAULT_MESSAGE,
+    };
+    render.full();
+  }
+
+  function closeSendProgram() {
+    if (!state.ui.sendProgram) return;
+    state.ui.sendProgram.isOpen = false;
+    render.full();
+  }
+
+  function setSendProgramField(field, value) {
+    if (!state.ui.sendProgram) {
+      state.ui.sendProgram = {
+        isOpen: false,
+        to: "",
+        subject: SEND_PROGRAM_DEFAULT_SUBJECT,
+        message: SEND_PROGRAM_DEFAULT_MESSAGE,
+      };
+    }
+    if (!["to", "subject", "message"].includes(field)) return;
+    state.ui.sendProgram[field] = value || "";
   }
 
   function createProgramFromStart(pasientNavn, pasientEpost) {
@@ -634,5 +674,8 @@
     setStartDetailsName,
     setStartDetailsEmail,
     closeLoad,
+    openSendProgram,
+    closeSendProgram,
+    setSendProgramField,
   };
 }

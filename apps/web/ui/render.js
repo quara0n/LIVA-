@@ -325,6 +325,72 @@
     `;
   }
 
+  function renderSendProgramSection() {
+    const hoveddel = helpers.getHoveddelSection();
+    const hasExercises = Boolean(hoveddel && hoveddel.ovelser.length > 0);
+    const disabledAttr = hasExercises ? "" : "disabled";
+    const disabledTitle = hasExercises
+      ? ""
+      : 'title="Legg til minst én øvelse før du sender eller skriver ut"';
+    const sendProgram = state.ui.sendProgram || {
+      isOpen: false,
+      to: "",
+      subject: "Ditt treningsprogram",
+      message:
+        "Hei,\n\nHer er treningsprogrammet vi har laget sammen.\n\nTa kontakt hvis du har spørsmål.\n\nVennlig hilsen",
+    };
+
+    return `
+      <div class="section section-send-program" id="section-send-program">
+        <div class="send-program-actions">
+          <button class="primary" data-action="open-send-program" ${disabledAttr} ${disabledTitle}>Send på e-post</button>
+          <button class="primary" data-action="print-program" ${disabledAttr} ${disabledTitle}>Skriv ut</button>
+        </div>
+        ${
+          !hasExercises
+            ? '<p class="hint send-program-hint">Legg til minst én øvelse før du sender eller skriver ut</p>'
+            : ""
+        }
+      </div>
+      ${
+        sendProgram.isOpen
+          ? `
+        <div class="send-program-modal-backdrop" data-action="send-program-cancel">
+          <div class="send-program-modal" role="dialog" aria-modal="true" aria-label="Send program på e-post">
+            <h3>Send program på e-post</h3>
+            <label class="send-program-field">
+              <span>Til</span>
+              <input
+                data-action="send-program-to"
+                type="email"
+                autocomplete="email"
+                value="${sendProgram.to || ""}"
+              />
+            </label>
+            <label class="send-program-field">
+              <span>Emne</span>
+              <input
+                data-action="send-program-subject"
+                type="text"
+                value="${sendProgram.subject || ""}"
+              />
+            </label>
+            <label class="send-program-field">
+              <span>Melding</span>
+              <textarea data-action="send-program-message" rows="6">${sendProgram.message || ""}</textarea>
+            </label>
+            <div class="send-program-modal-actions">
+              <button class="primary" data-action="send-program-submit">Send</button>
+              <button class="action-btn" data-action="send-program-cancel">Avbryt</button>
+            </div>
+          </div>
+        </div>
+      `
+          : ""
+      }
+    `;
+  }
+
   function renderBuilder() {
     return `
       <div class="program-canvas">
@@ -358,6 +424,8 @@
             ></textarea>
           </div>
         </div>
+
+        ${renderSendProgramSection()}
       </div>
     `;
   }

@@ -85,11 +85,33 @@
   function renderProgramItems() {
     const hoveddel = helpers.getHoveddelSection();
     if (!hoveddel) return "";
+    const getVideoForExercise = (ovelseId) => {
+      const manifest = state.ui.videoManifest;
+      if (Array.isArray(manifest)) {
+        return manifest.find((entry) => entry?.exerciseKey === ovelseId) || null;
+      }
+      if (manifest && manifest.exerciseKey === ovelseId) {
+        return manifest;
+      }
+      return null;
+    };
+    const videoAssetUrl = (file) =>
+      new URL(`public/videos/${file}`, document.baseURI).toString();
+    const getVideoFilename = (url) => {
+      if (!url) return "";
+      const clean = String(url).split("#")[0].split("?")[0];
+      return clean.split("/").pop() || "";
+    };
 
     const items = hoveddel.ovelser
       .map((instans, index) => {
         const master = helpers.getMasterById(instans.ovelseId);
         const emoji = master?.emoji || "🏃";
+        const video = getVideoForExercise(instans.ovelseId);
+        const videoUrl = video?.url || "";
+        const videoFilename = getVideoFilename(videoUrl);
+        const thumbBase = videoFilename.replace(/\.mp4$/i, "");
+        const thumbUrl = videoFilename ? videoAssetUrl(`${thumbBase}.jpg`) : "";
         const altOpen = state.ui.altSectionOpen[instans.ovelseInstansId] || null;
         const detailsOpen = state.ui.detailsOpen[instans.ovelseInstansId] || false;
         const sekundar = state.ui.sekundar[instans.ovelseInstansId] || {
@@ -131,17 +153,32 @@
         return `
         <div class="exercise-card exercise-item">
           <div class="exercise-row exercise-main-row">
-            <div class="exercise-title">
-              <span class="emoji">${emoji}</span>
+            <div class="exercise-title" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
               <h4>${instans.navn}</h4>
+              <div style="display:flex;gap:12px;align-items:flex-start;">
+                <div style="position:relative;width:140px;height:140px;overflow:hidden;border-radius:10px;border:1px solid var(--border);flex:0 0 auto;">
+                  ${
+                    thumbUrl
+                      ? `<img src="${thumbUrl}" alt="${instans.navn}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'emoji',textContent:'${emoji}'}));" />`
+                      : `<span class="emoji">${emoji}</span>`
+                  }
+                  ${
+                    videoFilename
+                      ? `<button class="action-btn" data-action="open-inline-video" data-video-filename="${videoFilename}" data-video-title="${instans.navn}" style="position:absolute;top:4px;right:4px;background:rgba(255,255,255,0.35);border:1px solid rgba(0,0,0,0.12);box-shadow:0 1px 4px rgba(0,0,0,0.08);">▶</button>`
+                      : ""
+                  }
+                </div>
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <input class="inline-input" type="number" min="0" value="${instans.dosering.reps || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="reps" />
+                  <span class="times">×</span>
+                  <input class="inline-input" type="number" min="0" value="${instans.dosering.sett || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="sett" />
+                </div>
+              </div>
               <div class="inline-actions">
                 <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon">+ Progresjon</button>
                 <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon">− Regresjon</button>
               </div>
             </div>
-            <input class="inline-input" type="number" min="0" value="${instans.dosering.reps || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="reps" />
-            <span class="times">×</span>
-            <input class="inline-input" type="number" min="0" value="${instans.dosering.sett || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="sett" />
             <button class="expand-btn" data-action="toggle-details" data-instans-id="${instans.ovelseInstansId}" aria-expanded="${detailsOpen}">+</button>
             ${detailsOpen ? `
               <input class="inline-input compact" placeholder="Vekt" value="${sekundar.vekt}" data-action="edit-sekundar" data-instans-id="${instans.ovelseInstansId}" data-field="vekt" />
@@ -173,20 +210,75 @@
     if (!els.libraryGridEl) return;
     const query = helpers.normalize(state.search);
     const filtered = state.library.filter((item) => helpers.matchesSearch(item, query));
+    const getVideoForExercise = (ovelseId) => {
+      const manifest = state.ui.videoManifest;
+      if (Array.isArray(manifest)) {
+        return manifest.find((entry) => entry?.exerciseKey === ovelseId) || null;
+      }
+      if (manifest && manifest.exerciseKey === ovelseId) {
+        return manifest;
+      }
+      return null;
+    };
+    const videoAssetUrl = (file) =>
+      new URL(`public/videos/${file}`, document.baseURI).toString();
+    const getVideoFilename = (url) => {
+      if (!url) return "";
+      const clean = String(url).split("#")[0].split("?")[0];
+      const filename = clean.split("/").pop() || "";
+      return filename;
+    };
 
     els.libraryGridEl.innerHTML = filtered
       .map((item) => {
         const disabled = helpers.isInProgram(item.ovelseId);
+        const video = getVideoForExercise(item.ovelseId);
+        const videoUrl = video?.url || "";
+        const videoFilename = getVideoFilename(videoUrl);
+        const displayName =
+          item.ovelseId === "goblet-kneboy" ? "45 graders knebøy" : item.navn || "Forhåndsvis video";
+        const thumbBase = videoFilename.replace(/\.mp4$/i, "");
+        const thumbUrl = videoFilename ? videoAssetUrl(`${thumbBase}.jpg`) : "";
         return `
-        <div class="library-card">
-          <div class="emoji">${item.emoji || "💪"}</div>
-          <h4>${item.navn}</h4>
-          ${item.tagger && item.tagger[0] ? `<span class="tag">${item.tagger[0]}</span>` : ""}
-          <button class="add-btn" data-action="add-exercise" data-ovelse-id="${item.ovelseId}" ${disabled ? "disabled" : ""}>Legg til</button>
+        <div class="library-card" style="position:relative;">
+          <div style="position:relative;height:140px;overflow:hidden;border-radius:10px;">
+            ${
+              thumbUrl
+                ? `<img src="${thumbUrl}" alt="${displayName}" style="width:100%;height:100%;object-fit:cover;display:block;border:1px solid var(--border);filter:contrast(0.92);" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'emoji',textContent:'${item.emoji || "💪"}'}));" />`
+                : `<div class="emoji">${item.emoji || "💪"}</div>`
+            }
+            <div style="position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:flex-end;gap:8px;background:transparent;border-radius:10px;padding:8px;">
+              <button class="action-btn" data-action="add-exercise" data-ovelse-id="${item.ovelseId}" ${disabled ? "disabled" : ""} style="background:rgba(255,255,255,0.35);border:1px solid rgba(0,0,0,0.12);box-shadow:0 1px 4px rgba(0,0,0,0.08);">+</button>
+              ${
+                video && videoFilename
+                  ? `<button class="action-btn" data-action="open-inline-video" data-ovelse-id="${item.ovelseId}" data-video-filename="${videoFilename}" data-video-title="${displayName}" style="background:rgba(255,255,255,0.35);border:1px solid rgba(0,0,0,0.12);box-shadow:0 1px 4px rgba(0,0,0,0.08);">▶</button>`
+                  : ""
+              }
+            </div>
+          </div>
+          <h4>${displayName}</h4>
         </div>
       `;
       })
       .join("");
+  }
+
+  function renderVideoPreviewModal() {
+    const preview = state.ui.videoPreview || { isOpen: false };
+    if (!preview.isOpen) return "";
+    const title = preview.title || "Forhåndsvis video";
+    const url = preview.url || "";
+    return `
+      <div class="send-program-modal-backdrop" data-action="close-video-preview">
+        <div class="send-program-modal" role="dialog" aria-modal="true" aria-label="Forhåndsvis video">
+          <h3>${title}</h3>
+          <video data-action="video-preview-player" controls preload="metadata" src="${url}"></video>
+          <div class="send-program-modal-actions">
+            <button class="action-btn" data-action="close-video-preview">Lukk</button>
+          </div>
+        </div>
+      </div>
+    `;
   }
 
   function formatArchiveDate(value) {
@@ -552,15 +644,15 @@
 
     if (programRootEl) {
       if (panelView === "load") {
-        programRootEl.innerHTML = renderArchiveList();
+        programRootEl.innerHTML = `${renderArchiveList()}${renderVideoPreviewModal()}`;
       } else if (panelView === "templates") {
-        programRootEl.innerHTML = renderTemplatesList();
+        programRootEl.innerHTML = `${renderTemplatesList()}${renderVideoPreviewModal()}`;
       } else if (panelView === "start-details") {
-        programRootEl.innerHTML = renderStartDetails();
+        programRootEl.innerHTML = `${renderStartDetails()}${renderVideoPreviewModal()}`;
       } else if (isBuilder) {
-        programRootEl.innerHTML = renderBuilder();
+        programRootEl.innerHTML = `${renderBuilder()}${renderVideoPreviewModal()}`;
       } else {
-        programRootEl.innerHTML = renderStartState();
+        programRootEl.innerHTML = `${renderStartState()}${renderVideoPreviewModal()}`;
       }
     }
 

@@ -547,12 +547,33 @@
     state.ui.archiveEditName = "";
     state.ui.archiveEditEmail = "";
     state.ui.archiveEditError = "";
+    state.ui.videoPreview = {
+      isOpen: false,
+      url: "",
+      title: "",
+    };
     state.ui.sendProgram = {
       isOpen: false,
       to: "",
       subject: SEND_PROGRAM_DEFAULT_SUBJECT,
       message: SEND_PROGRAM_DEFAULT_MESSAGE,
     };
+  }
+
+  function openVideoPreview(payload) {
+    if (!payload || !payload.url) return;
+    state.ui.videoPreview = {
+      isOpen: true,
+      url: payload.url,
+      title: payload.title || "Forhåndsvis video",
+    };
+    render.full();
+  }
+
+  function closeVideoPreview() {
+    if (!state.ui.videoPreview) return;
+    state.ui.videoPreview.isOpen = false;
+    render.full();
   }
 
   function openSendProgram() {
@@ -852,5 +873,7 @@
     openSendProgram,
     closeSendProgram,
     setSendProgramField,
+    openVideoPreview,
+    closeVideoPreview,
   };
 }

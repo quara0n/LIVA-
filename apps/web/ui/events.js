@@ -265,18 +265,6 @@ export function bindEvents({
       target = actionTarget;
 
       if (action === "open-send-program") {
-        const email = String(state.patientEmail || state.program?.pasientEpost || "").trim();
-        if (!email) {
-          actions.setPatientDetailsOpen(true);
-          actions.setPatientEmailError("E-post må fylles inn for å sende");
-          window.setTimeout(() => {
-            const input = els.programRootEl?.querySelector(
-              "[data-action='edit-program-email']"
-            );
-            if (input) input.focus();
-          }, 0);
-          return;
-        }
         if (state.ui.patientEmailError) {
           actions.setPatientEmailError("");
         }
@@ -331,6 +319,40 @@ export function bindEvents({
           showToast("Kunne ikke åpne print-dialog.");
         }
         return;
+      }
+
+      if (action === "preview-video") {
+        const url = target.dataset.videoUrl || "";
+        const title = target.dataset.videoTitle || "Forhåndsvis video";
+        if (!url) {
+          showToast("Videoen er ikke tilgjengelig.");
+          return;
+        }
+        actions.openVideoPreview({ url, title });
+        return;
+      }
+
+      if (action === "open-inline-video") {
+        const videoFilename = actionTarget.dataset.videoFilename || "";
+        const videoTitle = actionTarget.dataset.videoTitle || "";
+        if (!videoFilename) {
+          showToast("Videoen er ikke tilgjengelig.");
+          return;
+        }
+        const resolvedUrl = videoAssetUrl(videoFilename);
+        openVideoOverlay({ title: videoTitle, videoUrl: resolvedUrl });
+        return;
+      }
+
+      if (action === "close-video-preview") {
+        if (target.classList.contains("send-program-modal-backdrop")) {
+          actions.closeVideoPreview();
+          return;
+        }
+        if (target.closest(".send-program-modal-actions")) {
+          actions.closeVideoPreview();
+          return;
+        }
       }
 
       if (action === "open-start-details") {
@@ -558,16 +580,165 @@ export function bindEvents({
         }
       }
     });
+
+    els.programRootEl.addEventListener(
+      "error",
+      (event) => {
+        const target = event.target;
+        if (
+          target?.dataset?.action === "video-preview-player" ||
+          target?.dataset?.videoRole === "inline"
+        ) {
+          showToast("Kunne ikke laste video.");
+        }
+      },
+      true
+    );
+  }
+
+  const videoAssetUrl = (file) =>
+    new URL(`public/videos/${file}`, document.baseURI).toString();
+  let overlayKeyHandler = null;
+
+  function closeVideoOverlay() {
+    const existing = document.getElementById("video-overlay");
+    if (!existing) return;
+    const video = existing.querySelector("video");
+    if (video) {
+      try {
+        video.pause();
+        video.currentTime = 0;
+      } catch (_error) {
+        // ignore
+      }
+    }
+    existing.remove();
+    if (overlayKeyHandler) {
+      document.removeEventListener("keydown", overlayKeyHandler);
+      overlayKeyHandler = null;
+    }
+  }
+
+  function openVideoOverlay({ title, videoUrl }) {
+    if (!videoUrl) {
+      showToast("Videoen er ikke tilgjengelig.");
+      return;
+    }
+    closeVideoOverlay();
+
+    const overlay = document.createElement("div");
+    overlay.id = "video-overlay";
+    overlay.style.position = "fixed";
+    overlay.style.inset = "0";
+    overlay.style.zIndex = "9999";
+
+    const backdrop = document.createElement("div");
+    backdrop.style.position = "absolute";
+    backdrop.style.inset = "0";
+    backdrop.style.background = "rgba(0,0,0,0.35)";
+
+    const panel = document.createElement("div");
+    panel.style.position = "absolute";
+    panel.style.left = "50%";
+    panel.style.top = "50%";
+    panel.style.transform = "translate(-50%, -50%)";
+    panel.style.width = "min(90vw, 720px)";
+    panel.style.background = "#fff";
+    panel.style.border = "1px solid var(--border)";
+    panel.style.borderRadius = "14px";
+    panel.style.boxShadow = "var(--shadow)";
+    panel.style.padding = "12px";
+    panel.style.display = "grid";
+    panel.style.gap = "10px";
+
+    const header = document.createElement("div");
+    header.style.display = "flex";
+    header.style.alignItems = "center";
+    header.style.justifyContent = "space-between";
+    header.style.gap = "8px";
+
+    const heading = document.createElement("strong");
+    heading.textContent = title || "Forhåndsvis video";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "action-btn";
+    closeBtn.type = "button";
+    closeBtn.textContent = "X Lukk";
+    closeBtn.addEventListener("click", closeVideoOverlay);
+
+    const video = document.createElement("video");
+    video.setAttribute("controls", "");
+    video.setAttribute("preload", "metadata");
+    video.setAttribute("playsinline", "");
+    video.style.width = "100%";
+    video.style.aspectRatio = "16 / 9";
+    video.src = videoUrl;
+    video.load();
+    console.log("[video] src =", videoUrl);
+
+    const errorText = document.createElement("div");
+    errorText.className = "hint";
+    errorText.textContent = "Video ikke tilgjengelig.";
+    errorText.style.display = "none";
+
+    video.addEventListener("error", () => {
+      errorText.style.display = "block";
+    });
+
+    header.appendChild(heading);
+    header.appendChild(closeBtn);
+    panel.appendChild(header);
+    panel.appendChild(video);
+    panel.appendChild(errorText);
+    overlay.appendChild(backdrop);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    backdrop.addEventListener("click", closeVideoOverlay);
+
+    try {
+      const playPromise = video.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
+    } catch (_error) {
+      // ignore autoplay failures, user can press play
+    }
+
+    overlayKeyHandler = (event) => {
+      if (event.key === "Escape") {
+        closeVideoOverlay();
+      }
+    };
+    document.addEventListener("keydown", overlayKeyHandler);
   }
 
   if (els.libraryGridEl) {
     els.libraryGridEl.addEventListener("click", (event) => {
       const target = event.target;
-      if (!target.matches("[data-action='add-exercise']")) return;
-      const ovelseId = target.dataset.ovelseId;
-      const master = actions.getMasterById(ovelseId);
-      if (!master) return;
-      actions.addExercise(master);
+      const actionTarget = target.closest("[data-action]");
+      const action = actionTarget?.dataset.action;
+      if (!action) return;
+
+      if (action === "add-exercise") {
+        const ovelseId = actionTarget.dataset.ovelseId;
+        const master = actions.getMasterById(ovelseId);
+        if (!master) return;
+        actions.addExercise(master);
+        return;
+      }
+
+      if (action === "open-inline-video") {
+        const videoFilename = actionTarget.dataset.videoFilename || "";
+        const videoTitle = actionTarget.dataset.videoTitle || "";
+        if (!videoFilename) {
+          showToast("Videoen er ikke tilgjengelig.");
+          return;
+        }
+        const resolvedUrl = videoAssetUrl(videoFilename);
+        openVideoOverlay({ title: videoTitle, videoUrl: resolvedUrl });
+        return;
+      }
     });
   }
 }

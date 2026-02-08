@@ -15,6 +15,7 @@ import { createRenderer } from "./ui/render.js";
 const DATA_PATHS = {
   program: "../../src/data/program.seed.json",
   library: "../../src/data/ovelsesbibliotek.seed.json",
+  videos: "../../src/data/videos.manifest.json",
   templates: [
     "../../src/data/templates/tennisalbue.json",
     "../../src/data/templates/achilles_tendinopati.json",
@@ -53,6 +54,12 @@ const state = {
     archiveEditName: "",
     archiveEditEmail: "",
     archiveEditError: "",
+    videoManifest: null,
+    videoPreview: {
+      isOpen: false,
+      url: "",
+      title: "",
+    },
     sendProgram: {
       isOpen: false,
       to: "",
@@ -109,6 +116,7 @@ async function loadSeeds() {
     fetch(DATA_PATHS.library),
     ...templateRequests,
   ]);
+  let videoManifest = null;
 
   if (
     !programRes.ok ||
@@ -116,6 +124,14 @@ async function loadSeeds() {
     templateRes.some((res) => !res.ok)
   ) {
     throw new Error("Kunne ikke laste seed-data.");
+  }
+  try {
+    const videoRes = await fetch(DATA_PATHS.videos);
+    if (videoRes.ok) {
+      videoManifest = await videoRes.json();
+    }
+  } catch (_error) {
+    videoManifest = null;
   }
 
   const draft = loadDraft();
@@ -128,6 +144,7 @@ async function loadSeeds() {
   state.hasUnsavedChanges = false;
   state.library = await libraryRes.json();
   state.templates = await Promise.all(templateRes.map((res) => res.json()));
+  state.ui.videoManifest = videoManifest;
 }
 
 async function init() {

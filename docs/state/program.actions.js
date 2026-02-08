@@ -1,4 +1,4 @@
-﻿export function createProgramActions({
+export function createProgramActions({
   state,
   saveArchive,
   loadArchive,

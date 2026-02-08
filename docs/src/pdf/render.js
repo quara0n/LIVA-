@@ -15,9 +15,9 @@ async function loadLogoImage() {
     return null;
   }
   try {
-    let response = await fetch("/assets/brand/liva-logo.png");
+    let response = await fetch("assets/brand/liva-logo.png");
     if (!response.ok) {
-      response = await fetch("/public/assets/brand/liva-logo.png");
+      response = await fetch("public/assets/brand/liva-logo.png");
     }
     if (!response.ok) return null;
     const blob = await response.blob();

@@ -189,12 +189,6 @@ export function bindEvents({
         actions.updateAltField(instansId, altIndex, field, target.value);
         return;
       }
-      if (target.matches("[data-action='edit-sekundar']")) {
-        const instansId = target.dataset.instansId;
-        const field = target.dataset.field;
-        actions.setSekundar(instansId, field, target.value);
-        return;
-      }
       if (target.dataset.action === "alt-custom") {
         actions.setAltCustom(target.value);
         return;
@@ -528,6 +522,14 @@ export function bindEvents({
       if (action === "alt-cancel") actions.cancelAltPicker();
       if (action === "alt-save") actions.saveAltPicker();
       if (action === "toggle-details") actions.toggleDetails(instansId);
+      if (action === "toggle-alt-details") {
+        const altIndex = Number(target.dataset.altIndex);
+        actions.toggleAltDetails(instansId, altIndex);
+      }
+      if (action === "remove-alt") {
+        const altIndex = Number(target.dataset.altIndex);
+        actions.removeAlt(instansId, altIndex);
+      }
     });
 
     els.programRootEl.addEventListener("keydown", (event) => {

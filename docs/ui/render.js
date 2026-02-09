@@ -1,4 +1,4 @@
-﻿export function createRenderer({ state, els, helpers: initialHelpers }) {
+export function createRenderer({ state, els, helpers: initialHelpers }) {
   let helpers = initialHelpers;
 
   function setHelpers(nextHelpers) {

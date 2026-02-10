@@ -153,7 +153,6 @@
           <div class="dosage-col">
             <label class="dose-label">reps</label>
             <input class="inline-input dose-input dose-input--small" type="number" min="0" value="${repsValue}" data-action="${inputAction}" ${inputAttrs} data-field="reps" />
-            <span class="dose-separator">×</span>
             <label class="dose-label">sett</label>
             <input class="inline-input dose-input dose-input--small" type="number" min="0" value="${settValue}" data-action="${inputAction}" ${inputAttrs} data-field="sett" />
             <button class="dose-toggle" data-action="${toggleAction}" ${toggleAttrs} aria-expanded="false">+</button>
@@ -164,7 +163,7 @@
     `;
 
     const items = hoveddel.ovelser
-      .map((instans) => {
+      .map((instans, index) => {
         const master = helpers.getMasterById(instans.ovelseId);
         const emoji = master?.emoji || "🏃";
         const video = getVideoForExercise(instans.ovelseId);
@@ -203,14 +202,18 @@
               ? ": " + alt.narBrukesEgendefinertTekst
               : ""
           }`;
+          const helperText = String(narBrukes || "").trim();
           const retningLabel = alt.retning === "progresjon" ? "Progresjon" : "Regresjon";
 
           return `
-          <div class="exercise-card exercise-item exercise-alt-card" data-alt-retning="${alt.retning}">
+          <div class="exercise-card exercise-item exercise-alt-card" data-action="open-exercise-preview" data-instans-id="${instans.ovelseInstansId}" data-alt-index="${altIndex}" data-alt-retning="${alt.retning}">
             <button class="remove-btn" data-action="remove-alt" data-instans-id="${instans.ovelseInstansId}" data-alt-index="${altIndex}" aria-label="Slett øvelse">×</button>
             <span class="alt-badge">${retningLabel}</span>
             <div class="exercise-title" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
-              <h4>${alt.navn}</h4>
+              <div class="exercise-title-row">
+                <h4>${alt.navn}</h4>
+                ${helperText ? `<span class="exercise-helper">${helperText}</span>` : ""}
+              </div>
               <div class="exercise-media-row">
                 ${renderExerciseMedia(altThumbUrl, altEmoji, alt.navn, altVideoFilename)}
                 ${renderDosageStack({
@@ -225,7 +228,6 @@
                   tidValue: alt.dosering?.varighetSek || 0,
                 })}
               </div>
-              <div class="alt-criteria">${narBrukes}</div>
             </div>
           </div>
         `;
@@ -237,7 +239,8 @@
 
         return `
         <div class="exercise-card-row">
-          <div class="exercise-card exercise-item">
+          <div class="exercise-card exercise-item" data-action="open-exercise-preview" data-instans-id="${instans.ovelseInstansId}">
+            <span class="exercise-order">${index + 1}</span>
             <button class="remove-btn" data-action="remove" data-instans-id="${instans.ovelseInstansId}" aria-label="Slett øvelse">×</button>
             <div class="exercise-row exercise-main-row">
               <div class="exercise-title" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
@@ -347,6 +350,107 @@
           <video data-action="video-preview-player" controls preload="metadata" src="${url}"></video>
           <div class="send-program-modal-actions">
             <button class="action-btn" data-action="close-video-preview">Lukk</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderExercisePreviewModal() {
+    const preview = state.ui.exercisePreview || { isOpen: false };
+    if (!preview.isOpen) return "";
+    const hoveddel = helpers.getHoveddelSection();
+    const instans = hoveddel?.ovelser?.find(
+      (o) => o.ovelseInstansId === preview.instansId
+    );
+    if (!instans) return "";
+
+    let ovelseId = instans.ovelseId;
+    let navn = instans.navn || "Øvelse";
+    let utforelse = instans.utforelse || "";
+    let kommentar = instans.kommentar || "";
+    let retningLabel = "";
+
+    if (Number.isFinite(preview.altIndex)) {
+      const alt = instans.alternativer?.[preview.altIndex];
+      if (!alt) return "";
+      ovelseId = alt.ovelseId || ovelseId;
+      navn = alt.navn || navn;
+      utforelse = alt.utforelse || "";
+      kommentar = alt.kommentar || "";
+      retningLabel =
+        alt.retning === "progresjon"
+          ? "Progresjon"
+          : alt.retning === "regresjon"
+            ? "Regresjon"
+            : "";
+    }
+
+    const master = helpers.getMasterById(ovelseId);
+    const emoji = master?.emoji || "🏃";
+    const manifest = state.ui.videoManifest;
+    const getVideoForExercise = (id) => {
+      if (Array.isArray(manifest)) {
+        return manifest.find((entry) => entry?.exerciseKey === id) || null;
+      }
+      if (manifest && manifest.exerciseKey === id) {
+        return manifest;
+      }
+      return null;
+    };
+    const video = getVideoForExercise(ovelseId);
+    const videoUrl = video?.url || "";
+    const clean = String(videoUrl).split("#")[0].split("?")[0];
+    const videoFilename = clean.split("/").pop() || "";
+    const thumbBase = videoFilename.replace(/\.mp4$/i, "");
+    const thumbUrl = videoFilename
+      ? new URL(`public/videos/${thumbBase}.jpg`, document.baseURI).toString()
+      : "";
+    const instructionText = String(utforelse || "");
+    const commentText = String(kommentar || "");
+    const otherOpen =
+      typeof preview.otherOpen === "boolean"
+        ? preview.otherOpen
+        : Boolean(commentText.trim());
+    const instructionAction = Number.isFinite(preview.altIndex)
+      ? "edit-alt-instruction"
+      : "edit-exercise-instruction";
+    const commentAction = Number.isFinite(preview.altIndex)
+      ? "edit-alt-comment"
+      : "edit-exercise-comment";
+    const altIndexAttr = Number.isFinite(preview.altIndex)
+      ? `data-alt-index="${preview.altIndex}"`
+      : "";
+
+    return `
+      <div class="send-program-modal-backdrop" data-action="close-exercise-preview">
+        <div class="send-program-modal exercise-preview-modal" data-action="exercise-preview-modal" role="dialog" aria-modal="true" aria-label="Øvelsesinstruksjon">
+          <div class="exercise-preview-header">
+            <h3>${navn}</h3>
+            <button class="action-btn exercise-preview-close" data-action="close-exercise-preview" aria-label="Lukk">×</button>
+          </div>
+          ${retningLabel ? `<span class="tag">${retningLabel}</span>` : ""}
+          <div class="exercise-preview-media">
+            ${
+              thumbUrl
+                ? `<img src="${thumbUrl}" alt="${navn}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'emoji',textContent:'${emoji}'}));" />`
+                : `<span class="emoji">${emoji}</span>`
+            }
+          </div>
+          <label class="exercise-preview-label">
+            <span>Instruksjon</span>
+            <textarea class="exercise-preview-textarea" rows="4" data-action="${instructionAction}" data-instans-id="${preview.instansId}" ${altIndexAttr}>${instructionText}</textarea>
+          </label>
+          <div class="exercise-preview-other">
+            <div class="exercise-preview-other-header">
+              <span>Annet</span>
+              <button class="dose-toggle" data-action="toggle-exercise-preview-other" aria-expanded="${otherOpen ? "true" : "false"}">${otherOpen ? "–" : "+"}</button>
+            </div>
+            ${
+              otherOpen
+                ? `<textarea class="exercise-preview-textarea exercise-preview-note" rows="3" data-action="${commentAction}" data-instans-id="${preview.instansId}" ${altIndexAttr}>${commentText}</textarea>`
+                : ""
+            }
           </div>
         </div>
       </div>
@@ -722,7 +826,7 @@
       } else if (panelView === "start-details") {
         programRootEl.innerHTML = `${renderStartDetails()}${renderVideoPreviewModal()}`;
       } else if (isBuilder) {
-        programRootEl.innerHTML = `${renderBuilder()}${renderVideoPreviewModal()}`;
+        programRootEl.innerHTML = `${renderBuilder()}${renderExercisePreviewModal()}${renderVideoPreviewModal()}`;
       } else {
         programRootEl.innerHTML = `${renderStartState()}${renderVideoPreviewModal()}`;
       }

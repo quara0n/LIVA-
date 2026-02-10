@@ -158,6 +158,15 @@
   cursor: grab;
 }
 
+.exercise-order {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 13px;
+  color: #c23d00;
+  letter-spacing: 0.02em;
+}
+
 .exercise-card:active {
   cursor: grabbing;
 }
@@ -304,6 +313,7 @@
   font-size: 11px;
   color: var(--muted);
   text-transform: lowercase;
+  text-align: center;
 }
 
 .dose-separator {
@@ -340,6 +350,19 @@
 .dose-input {
   text-align: center;
   padding: 4px 6px;
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease,
+    box-shadow 0.15s ease;
+  background: #f7f5f1;
+  border-color: #e7e1d9;
+  color: #5f5a55;
+}
+
+.dose-input:focus {
+  background: #fff;
+  border-color: var(--accent-2);
+  color: var(--ink);
+  box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.12);
+  outline: none;
 }
 
 .dose-input--small {
@@ -479,6 +502,31 @@
   color: var(--muted);
 }
 
+.exercise-alt-card .exercise-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.exercise-alt-card .exercise-title-row h4 {
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.exercise-alt-card .exercise-helper {
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .alt-meta {
   margin-top: 6px;
   display: flex;
@@ -580,6 +628,71 @@
 .send-program-modal h3 {
   margin: 0;
   font-size: 18px;
+}
+
+.exercise-preview-modal {
+  gap: 14px;
+}
+
+.exercise-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.exercise-preview-label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.exercise-preview-media {
+  width: 100%;
+  min-height: 180px;
+  border-radius: 12px;
+  background: #f3efea;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.exercise-preview-media img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.exercise-preview-media .emoji {
+  font-size: 48px;
+}
+
+.exercise-preview-textarea {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: vertical;
+  color: var(--ink);
+}
+
+.exercise-preview-other {
+  display: grid;
+  gap: 8px;
+}
+
+.exercise-preview-other-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.exercise-preview-note {
+  background: #fcfaf6;
 }
 
 .send-program-field {

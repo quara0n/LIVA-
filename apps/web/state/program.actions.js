@@ -570,6 +570,12 @@
       url: "",
       title: "",
     };
+    state.ui.exercisePreview = {
+      isOpen: false,
+      instansId: "",
+      altIndex: null,
+      otherOpen: false,
+    };
     state.ui.sendProgram = {
       isOpen: false,
       to: "",
@@ -592,6 +598,78 @@
     if (!state.ui.videoPreview) return;
     state.ui.videoPreview.isOpen = false;
     render.full();
+  }
+
+  function openExercisePreview(payload) {
+    if (!payload || !payload.instansId) return;
+    const altIndex = Number.isFinite(payload.altIndex) ? Number(payload.altIndex) : null;
+    const hoveddel = getHoveddelSection();
+    const instans = hoveddel?.ovelser?.find(
+      (o) => o.ovelseInstansId === payload.instansId
+    );
+    let commentText = "";
+    if (instans) {
+      if (Number.isFinite(altIndex)) {
+        commentText = instans.alternativer?.[altIndex]?.kommentar || "";
+      } else {
+        commentText = instans.kommentar || "";
+      }
+    }
+    state.ui.exercisePreview = {
+      isOpen: true,
+      instansId: payload.instansId,
+      altIndex,
+      otherOpen: Boolean(String(commentText || "").trim()),
+    };
+    render.full();
+  }
+
+  function closeExercisePreview() {
+    if (!state.ui.exercisePreview) return;
+    state.ui.exercisePreview.isOpen = false;
+    render.full();
+  }
+
+  function toggleExercisePreviewOther() {
+    if (!state.ui.exercisePreview) return;
+    state.ui.exercisePreview.otherOpen = !state.ui.exercisePreview.otherOpen;
+    render.full();
+  }
+
+  function updateExerciseInstruction(instansId, value) {
+    const hoveddel = getHoveddelSection();
+    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    if (!instans) return;
+    instans.utforelse = value || "";
+    markUnsavedChanges();
+    saveDraft(state.program);
+  }
+
+  function updateAltInstruction(instansId, altIndex, value) {
+    const hoveddel = getHoveddelSection();
+    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    if (!instans || !instans.alternativer || !instans.alternativer[altIndex]) return;
+    instans.alternativer[altIndex].utforelse = value || "";
+    markUnsavedChanges();
+    saveDraft(state.program);
+  }
+
+  function updateExerciseComment(instansId, value) {
+    const hoveddel = getHoveddelSection();
+    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    if (!instans) return;
+    instans.kommentar = value || "";
+    markUnsavedChanges();
+    saveDraft(state.program);
+  }
+
+  function updateAltComment(instansId, altIndex, value) {
+    const hoveddel = getHoveddelSection();
+    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    if (!instans || !instans.alternativer || !instans.alternativer[altIndex]) return;
+    instans.alternativer[altIndex].kommentar = value || "";
+    markUnsavedChanges();
+    saveDraft(state.program);
   }
 
   function openSendProgram() {
@@ -894,5 +972,12 @@
     setSendProgramField,
     openVideoPreview,
     closeVideoPreview,
+    openExercisePreview,
+    closeExercisePreview,
+    toggleExercisePreviewOther,
+    updateExerciseInstruction,
+    updateAltInstruction,
+    updateExerciseComment,
+    updateAltComment,
   };
 }

@@ -60,6 +60,12 @@ const state = {
       url: "",
       title: "",
     },
+    exercisePreview: {
+      isOpen: false,
+      instansId: "",
+      altIndex: null,
+      otherOpen: false,
+    },
     sendProgram: {
       isOpen: false,
       to: "",

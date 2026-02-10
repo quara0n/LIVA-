@@ -212,6 +212,32 @@ export function bindEvents({
         actions.setProgramDiagnosis(target.value);
         return;
       }
+      if (target.dataset.action === "edit-exercise-instruction") {
+        const instansId = target.dataset.instansId;
+        if (!instansId) return;
+        actions.updateExerciseInstruction(instansId, target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-alt-instruction") {
+        const instansId = target.dataset.instansId;
+        const altIndex = Number(target.dataset.altIndex);
+        if (!instansId || Number.isNaN(altIndex)) return;
+        actions.updateAltInstruction(instansId, altIndex, target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-exercise-comment") {
+        const instansId = target.dataset.instansId;
+        if (!instansId) return;
+        actions.updateExerciseComment(instansId, target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-alt-comment") {
+        const instansId = target.dataset.instansId;
+        const altIndex = Number(target.dataset.altIndex);
+        if (!instansId || Number.isNaN(altIndex)) return;
+        actions.updateAltComment(instansId, altIndex, target.value);
+        return;
+      }
       if (target.dataset.action === "edit-notater") {
         actions.setNotater(target.value);
       }
@@ -335,6 +361,32 @@ export function bindEvents({
         }
         const resolvedUrl = videoAssetUrl(videoFilename);
         openVideoOverlay({ title: videoTitle, videoUrl: resolvedUrl });
+        return;
+      }
+
+      if (action === "open-exercise-preview") {
+        const instansId = target.dataset.instansId;
+        if (!instansId) return;
+        const altIndexValue = target.dataset.altIndex;
+        actions.openExercisePreview({
+          instansId,
+          altIndex:
+            altIndexValue === undefined ? null : Number(altIndexValue),
+        });
+        return;
+      }
+
+      if (action === "toggle-exercise-preview-other") {
+        actions.toggleExercisePreviewOther();
+        return;
+      }
+
+      if (action === "close-exercise-preview") {
+        actions.closeExercisePreview();
+        return;
+      }
+
+      if (action === "exercise-preview-modal") {
         return;
       }
 
@@ -538,6 +590,10 @@ export function bindEvents({
         target &&
         (target.matches("input, textarea") || target.isContentEditable)
       ) {
+        return;
+      }
+      if (event.key === "Escape" && state.ui.exercisePreview?.isOpen) {
+        actions.closeExercisePreview();
         return;
       }
       if (

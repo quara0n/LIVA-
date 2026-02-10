@@ -137,10 +137,64 @@
   gap: 12px;
 }
 
+.exercise-card-row {
+  display: flex;
+  gap: 12px;
+  align-items: stretch;
+  flex-wrap: wrap;
+}
+
+.exercise-card-row .exercise-card {
+  flex: 1 1 320px;
+  min-width: 260px;
+}
+
 .exercise-card {
   border: 1px solid var(--border);
   border-radius: 12px;
   padding: 12px;
+  background: #fff;
+  position: relative;
+  cursor: grab;
+}
+
+.exercise-card:active {
+  cursor: grabbing;
+}
+
+.remove-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  border: none;
+  background: #ffe5e5;
+  color: #b00020;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.remove-btn:hover {
+  background: #ffd6d6;
+}
+.exercise-alt-card {
+  background: #fbf8f1;
+}
+
+.alt-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--muted);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 2px 8px;
   background: #fff;
 }
 
@@ -191,6 +245,125 @@
 
 .times {
   font-size: 13px;
+  color: var(--muted);
+}
+
+.exercise-media-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.exercise-media {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  flex: 0 0 auto;
+}
+
+.exercise-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.exercise-media .emoji {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+}
+
+.media-video-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255, 255, 255, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+.exercise-dosage {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.exercise-dosage-stack {
+  display: block;
+}
+
+.dose-label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: lowercase;
+}
+
+.dose-separator {
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.dosage-grid {
+  display: grid;
+  grid-template-columns: auto auto;
+  column-gap: 10px;
+  row-gap: 4px;
+  align-items: start;
+}
+
+.dosage-col {
+  display: grid;
+  gap: 4px;
+  align-items: start;
+}
+
+.dose-toggle {
+  border: 1px solid var(--border);
+  background: #f7f5f1;
+  color: var(--ink);
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.dose-input {
+  text-align: center;
+  padding: 4px 6px;
+}
+
+.dose-input--small {
+  width: 44px;
+}
+
+.dose-input--medium {
+  width: 64px;
+}
+
+.exercise-dosage-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.unit {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.alt-criteria {
+  font-size: 12px;
   color: var(--muted);
 }
 

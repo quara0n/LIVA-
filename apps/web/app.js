@@ -39,7 +39,7 @@ const state = {
     showMore: {},
     altPicker: null,
     detailsOpen: {},
-    sekundar: {},
+    altDetailsOpen: {},
     panelView: "start",
     templateOrigin: null,
     loadOrigin: null,

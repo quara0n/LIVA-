@@ -165,6 +165,8 @@
       (o) => o.ovelseInstansId !== instansId
     );
     delete state.ui.altSectionOpen[instansId];
+    delete state.ui.detailsOpen[instansId];
+    delete state.ui.altDetailsOpen[instansId];
     markUnsavedChanges();
     saveDraft(state.program);
     render.full();
@@ -193,6 +195,10 @@
     if (!instans) return;
     if (field === "reps" || field === "sett") {
       instans.dosering[field] = Number(value) || 0;
+    } else if (field === "vekt") {
+      instans.dosering.belastningKg = Number(value) || 0;
+    } else if (field === "tid") {
+      instans.dosering.varighetSek = Number(value) || 0;
     } else if (field === "kommentar") {
       instans.kommentar = value;
     }
@@ -212,12 +218,24 @@
     render.full();
   }
 
-  function updateSekundar(instansId, field, value) {
-    state.ui.sekundar[instansId] = state.ui.sekundar[instansId] || {
-      vekt: "",
-      pause: "",
-    };
-    state.ui.sekundar[instansId][field] = value;
+  function toggleAltDetails(instansId, altIndex) {
+    state.ui.altDetailsOpen[instansId] = state.ui.altDetailsOpen[instansId] || {};
+    state.ui.altDetailsOpen[instansId][altIndex] =
+      !state.ui.altDetailsOpen[instansId][altIndex];
+    render.full();
+  }
+
+  function removeAlt(instansId, altIndex) {
+    const hoveddel = getHoveddelSection();
+    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    if (!instans || !instans.alternativer || !instans.alternativer[altIndex]) return;
+    instans.alternativer.splice(altIndex, 1);
+    if (state.ui.altDetailsOpen[instansId]) {
+      state.ui.altDetailsOpen[instansId] = {};
+    }
+    markUnsavedChanges();
+    saveDraft(state.program);
+    render.full();
   }
 
   function toggleShowMore(instansId, retning) {
@@ -328,13 +346,13 @@
     alt.dosering = alt.dosering || { doseringstype: "reps_x_sett", reps: 0, sett: 0 };
     if (field === "reps" || field === "sett") {
       alt.dosering[field] = Number(value) || 0;
+    } else if (field === "vekt") {
+      alt.dosering.belastningKg = Number(value) || 0;
+    } else if (field === "tid") {
+      alt.dosering.varighetSek = Number(value) || 0;
     }
     markUnsavedChanges();
     saveDraft(state.program);
-  }
-
-  function setSekundar(instansId, field, value) {
-    updateSekundar(instansId, field, value);
   }
 
   function setAltCustom(value) {
@@ -534,7 +552,7 @@
     state.ui.showMore = {};
     state.ui.altPicker = null;
     state.ui.detailsOpen = {};
-    state.ui.sekundar = {};
+    state.ui.altDetailsOpen = {};
     state.ui.nameError = "";
     state.ui.startDetailsPurpose = null;
     state.ui.startDetailsName = "";
@@ -830,10 +848,12 @@
     finnOvelserUtenUtforelse,
     addExercise,
     removeExercise,
+    removeAlt,
     moveExercise,
     updateDosering,
     toggleAltSection,
     toggleDetails,
+    toggleAltDetails,
     toggleShowMore,
     openAltPicker,
     cancelAltPicker,
@@ -842,7 +862,6 @@
     setNotater,
     setAltPreset,
     updateAltField,
-    setSekundar,
     setAltCustom,
     setProgramName,
     setProgramEmail,

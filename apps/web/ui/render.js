@@ -103,8 +103,68 @@
       return clean.split("/").pop() || "";
     };
 
+    const renderExerciseMedia = (thumbUrl, emojiValue, title, videoFilename) => `
+      <div class="exercise-media">
+        ${
+          thumbUrl
+            ? `<img src="${thumbUrl}" alt="${title}" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'emoji',textContent:'${emojiValue}'}));" />`
+            : `<span class="emoji">${emojiValue}</span>`
+        }
+        ${
+          videoFilename
+            ? `<button class="action-btn media-video-btn" data-action="open-inline-video" data-video-filename="${videoFilename}" data-video-title="${title}">▶</button>`
+            : ""
+        }
+      </div>
+    `;
+
+    const renderDosageStack = ({
+      repsValue,
+      settValue,
+      inputAction,
+      inputAttrs,
+      toggleAction,
+      toggleAttrs,
+      isOpen,
+      vektValue,
+      tidValue,
+    }) => `
+      <div class="exercise-dosage-stack">
+        ${
+          isOpen
+            ? `
+          <div class="dosage-grid">
+            <div class="dosage-col">
+              <label class="dose-label">reps</label>
+              <input class="inline-input dose-input dose-input--small" type="number" min="0" value="${repsValue}" data-action="${inputAction}" ${inputAttrs} data-field="reps" />
+              <label class="dose-label">sett</label>
+              <input class="inline-input dose-input dose-input--small" type="number" min="0" value="${settValue}" data-action="${inputAction}" ${inputAttrs} data-field="sett" />
+              <button class="dose-toggle" data-action="${toggleAction}" ${toggleAttrs} aria-expanded="true">–</button>
+            </div>
+            <div class="dosage-col">
+              <label class="dose-label">vekt</label>
+              <input class="inline-input dose-input dose-input--medium" type="number" min="0" value="${vektValue}" data-action="${inputAction}" ${inputAttrs} data-field="vekt" />
+              <label class="dose-label">tid</label>
+              <input class="inline-input dose-input dose-input--medium" type="number" min="0" value="${tidValue}" data-action="${inputAction}" ${inputAttrs} data-field="tid" />
+            </div>
+          </div>
+        `
+            : `
+          <div class="dosage-col">
+            <label class="dose-label">reps</label>
+            <input class="inline-input dose-input dose-input--small" type="number" min="0" value="${repsValue}" data-action="${inputAction}" ${inputAttrs} data-field="reps" />
+            <span class="dose-separator">×</span>
+            <label class="dose-label">sett</label>
+            <input class="inline-input dose-input dose-input--small" type="number" min="0" value="${settValue}" data-action="${inputAction}" ${inputAttrs} data-field="sett" />
+            <button class="dose-toggle" data-action="${toggleAction}" ${toggleAttrs} aria-expanded="false">+</button>
+          </div>
+        `
+        }
+      </div>
+    `;
+
     const items = hoveddel.ovelser
-      .map((instans, index) => {
+      .map((instans) => {
         const master = helpers.getMasterById(instans.ovelseId);
         const emoji = master?.emoji || "🏃";
         const video = getVideoForExercise(instans.ovelseId);
@@ -114,90 +174,102 @@
         const thumbUrl = videoFilename ? videoAssetUrl(`${thumbBase}.jpg`) : "";
         const altOpen = state.ui.altSectionOpen[instans.ovelseInstansId] || null;
         const detailsOpen = state.ui.detailsOpen[instans.ovelseInstansId] || false;
-        const sekundar = state.ui.sekundar[instans.ovelseInstansId] || {
-          vekt: "",
-          pause: "",
-        };
 
-        const altItems = (instans.alternativer || []).map((alt, altIndex) => {
-          const narBrukes = `${alt.narBrukesPreset}${alt.narBrukesEgendefinertTekst ? ": " + alt.narBrukesEgendefinertTekst : ""}`;
+        const altEntries = (instans.alternativer || []).map((alt, altIndex) => ({
+          alt,
+          altIndex,
+        }));
+        const progresjonEntries = altEntries.filter(
+          (entry) => entry.alt.retning === "progresjon"
+        );
+        const regresjonEntries = altEntries.filter(
+          (entry) => entry.alt.retning === "regresjon"
+        );
+
+        const renderSelectedAltCard = ({ alt, altIndex }) => {
+          const altDetailsOpen =
+            state.ui.altDetailsOpen?.[instans.ovelseInstansId]?.[altIndex] || false;
+          const altMaster = helpers.getMasterById(alt.ovelseId);
+          const altEmoji = altMaster?.emoji || "🏃";
+          const altVideo = getVideoForExercise(alt.ovelseId);
+          const altVideoUrl = altVideo?.url || "";
+          const altVideoFilename = getVideoFilename(altVideoUrl);
+          const altThumbBase = altVideoFilename.replace(/\.mp4$/i, "");
+          const altThumbUrl = altVideoFilename
+            ? videoAssetUrl(`${altThumbBase}.jpg`)
+            : "";
+          const narBrukes = `${alt.narBrukesPreset}${
+            alt.narBrukesEgendefinertTekst
+              ? ": " + alt.narBrukesEgendefinertTekst
+              : ""
+          }`;
+          const retningLabel = alt.retning === "progresjon" ? "Progresjon" : "Regresjon";
+
           return `
-          <div class="alt-item child">
-            <strong>${alt.navn}</strong>
-            <span class="tag">${alt.retning} · ${narBrukes}</span>
-            <div class="alt-meta">
-              <span>Dosering</span>
-              <input class="inline-input" type="number" min="0" value="${alt.dosering?.reps || 0}" data-action="edit-alt-field" data-instans-id="${instans.ovelseInstansId}" data-alt-index="${altIndex}" data-field="reps" />
-              <span>x</span>
-              <input class="inline-input" type="number" min="0" value="${alt.dosering?.sett || 0}" data-action="edit-alt-field" data-instans-id="${instans.ovelseInstansId}" data-alt-index="${altIndex}" data-field="sett" />
-              <span>sett</span>
+          <div class="exercise-card exercise-item exercise-alt-card" data-alt-retning="${alt.retning}">
+            <button class="remove-btn" data-action="remove-alt" data-instans-id="${instans.ovelseInstansId}" data-alt-index="${altIndex}" aria-label="Slett øvelse">×</button>
+            <span class="alt-badge">${retningLabel}</span>
+            <div class="exercise-title" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
+              <h4>${alt.navn}</h4>
+              <div class="exercise-media-row">
+                ${renderExerciseMedia(altThumbUrl, altEmoji, alt.navn, altVideoFilename)}
+                ${renderDosageStack({
+                  repsValue: alt.dosering?.reps || 0,
+                  settValue: alt.dosering?.sett || 0,
+                  inputAction: "edit-alt-field",
+                  inputAttrs: `data-instans-id="${instans.ovelseInstansId}" data-alt-index="${altIndex}"`,
+                  toggleAction: "toggle-alt-details",
+                  toggleAttrs: `data-instans-id="${instans.ovelseInstansId}" data-alt-index="${altIndex}"`,
+                  isOpen: altDetailsOpen,
+                  vektValue: alt.dosering?.belastningKg || 0,
+                  tidValue: alt.dosering?.varighetSek || 0,
+                })}
+              </div>
+              <div class="alt-criteria">${narBrukes}</div>
             </div>
-            <div class="alt-desc">${alt.utforelse || ""}</div>
           </div>
         `;
-        });
+        };
 
-        const valgtProgresjon = altItems
-          .filter(
-            (_, altIndex) =>
-              (instans.alternativer || [])[altIndex]?.retning === "progresjon"
-          )
-          .join("");
-        const valgtRegresjon = altItems
-          .filter(
-            (_, altIndex) =>
-              (instans.alternativer || [])[altIndex]?.retning === "regresjon"
-          )
+        const selectedAltCards = [...progresjonEntries, ...regresjonEntries]
+          .map((entry) => renderSelectedAltCard(entry))
           .join("");
 
         return `
-        <div class="exercise-card exercise-item">
-          <div class="exercise-row exercise-main-row">
-            <div class="exercise-title" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
-              <h4>${instans.navn}</h4>
-              <div style="display:flex;gap:12px;align-items:flex-start;">
-                <div style="position:relative;width:140px;height:140px;overflow:hidden;border-radius:10px;border:1px solid var(--border);flex:0 0 auto;">
-                  ${
-                    thumbUrl
-                      ? `<img src="${thumbUrl}" alt="${instans.navn}" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'emoji',textContent:'${emoji}'}));" />`
-                      : `<span class="emoji">${emoji}</span>`
-                  }
-                  ${
-                    videoFilename
-                      ? `<button class="action-btn" data-action="open-inline-video" data-video-filename="${videoFilename}" data-video-title="${instans.navn}" style="position:absolute;top:4px;right:4px;background:rgba(255,255,255,0.35);border:1px solid rgba(0,0,0,0.12);box-shadow:0 1px 4px rgba(0,0,0,0.08);">▶</button>`
-                      : ""
-                  }
+        <div class="exercise-card-row">
+          <div class="exercise-card exercise-item">
+            <button class="remove-btn" data-action="remove" data-instans-id="${instans.ovelseInstansId}" aria-label="Slett øvelse">×</button>
+            <div class="exercise-row exercise-main-row">
+              <div class="exercise-title" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
+                <h4>${instans.navn}</h4>
+                <div class="exercise-media-row">
+                  ${renderExerciseMedia(thumbUrl, emoji, instans.navn, videoFilename)}
+                  ${renderDosageStack({
+                    repsValue: instans.dosering.reps || 0,
+                    settValue: instans.dosering.sett || 0,
+                    inputAction: "edit-field",
+                    inputAttrs: `data-instans-id="${instans.ovelseInstansId}"`,
+                    toggleAction: "toggle-details",
+                    toggleAttrs: `data-instans-id="${instans.ovelseInstansId}"`,
+                    isOpen: detailsOpen,
+                    vektValue: instans.dosering.belastningKg || 0,
+                    tidValue: instans.dosering.varighetSek || 0,
+                  })}
                 </div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <input class="inline-input" type="number" min="0" value="${instans.dosering.reps || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="reps" />
-                  <span class="times">×</span>
-                  <input class="inline-input" type="number" min="0" value="${instans.dosering.sett || 0}" data-action="edit-field" data-instans-id="${instans.ovelseInstansId}" data-field="sett" />
+                <div class="inline-actions">
+                  <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon">+ Progresjon</button>
+                  <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon">− Regresjon</button>
                 </div>
-              </div>
-              <div class="inline-actions">
-                <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon">+ Progresjon</button>
-                <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon">− Regresjon</button>
               </div>
             </div>
-            <button class="expand-btn" data-action="toggle-details" data-instans-id="${instans.ovelseInstansId}" aria-expanded="${detailsOpen}">+</button>
-            ${detailsOpen ? `
-              <input class="inline-input compact" placeholder="Vekt" value="${sekundar.vekt}" data-action="edit-sekundar" data-instans-id="${instans.ovelseInstansId}" data-field="vekt" />
-              <input class="inline-input compact" placeholder="Pause" value="${sekundar.pause}" data-action="edit-sekundar" data-instans-id="${instans.ovelseInstansId}" data-field="pause" />
+            ${altOpen ? `
+              <div class="expand exercise-children-wrap">
+                ${altOpen === "progresjon" ? renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "progresjon", "Progresjon") : ""}
+                ${altOpen === "regresjon" ? renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "regresjon", "Regresjon") : ""}
+              </div>
             ` : ""}
-            <div class="actions">
-              <button class="action-btn" data-action="move-up" data-instans-id="${instans.ovelseInstansId}" ${index === 0 ? "disabled" : ""}>↑</button>
-              <button class="action-btn" data-action="move-down" data-instans-id="${instans.ovelseInstansId}" ${index === hoveddel.ovelser.length - 1 ? "disabled" : ""}>↓</button>
-              <button class="action-btn" data-action="remove" data-instans-id="${instans.ovelseInstansId}">Fjern</button>
-            </div>
           </div>
-          ${altOpen ? `
-            <div class="expand exercise-children-wrap">
-              ${altOpen === "progresjon" ? renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "progresjon", "Progresjon") : ""}
-              ${altOpen === "regresjon" ? renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "regresjon", "Regresjon") : ""}
-            </div>
-          ` : ""}
-          ${valgtProgresjon ? `<div class="alt-section compact exercise-children selected-progresjon"><strong>Valgte progresjoner</strong><div class="alt-list exercise-children-list">${valgtProgresjon}</div></div>` : ""}
-          ${valgtRegresjon ? `<div class="alt-section compact exercise-children selected-regresjon"><strong>Valgte regresjoner</strong><div class="alt-list exercise-children-list">${valgtRegresjon}</div></div>` : ""}
+          ${selectedAltCards}
         </div>
       `;
       })

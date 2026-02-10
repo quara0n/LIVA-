@@ -1,3 +1,5 @@
+“Doseringlayout implementeres iht. Kontrakt 28.”
+
 # UX – Programdel (MVP)
 
 ## Formål

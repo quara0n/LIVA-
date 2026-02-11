@@ -312,10 +312,13 @@
         item.ovelseId === "goblet-kneboy" ? "45 graders knebøy" : item.navn || "Forhåndsvis video";
       const thumbBase = videoFilename.replace(/\.mp4$/i, "");
       const thumbUrl = videoFilename ? videoAssetUrl(`${thumbBase}.jpg`) : "";
+      const mediaWrapperStyle = isSelectionMode
+        ? "position:relative;overflow:hidden;border-radius:10px;"
+        : "position:relative;height:140px;overflow:hidden;border-radius:10px;";
 
       return `
         <div class="library-card" style="position:relative;">
-          <div style="position:relative;height:140px;overflow:hidden;border-radius:10px;">
+          <div class="library-card-media" style="${mediaWrapperStyle}">
             ${
               thumbUrl
                 ? `<img src="${thumbUrl}" alt="${displayName}" style="width:100%;height:100%;object-fit:cover;display:block;border:1px solid var(--border);filter:contrast(0.92);" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'emoji',textContent:'${item.emoji || "💪"}'}));" />`
@@ -330,8 +333,10 @@
               }
             </div>
           </div>
-          <h4>${headingPrefix}${displayName}</h4>
-          ${isPickingThis ? renderAltPickerControls() : ""}
+          <div class="library-card-meta">
+            <h4>${headingPrefix}${displayName}</h4>
+          </div>
+          ${isPickingThis ? `<div class="library-card-config">${renderAltPickerControls()}</div>` : ""}
         </div>
       `;
     };

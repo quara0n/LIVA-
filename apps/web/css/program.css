@@ -137,6 +137,19 @@
   gap: 12px;
 }
 
+.exercise-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  align-items: start;
+}
+
+.exercise-column {
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
 .exercise-card-row {
   display: flex;
   gap: 12px;

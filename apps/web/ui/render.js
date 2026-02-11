@@ -123,7 +123,7 @@
       </div>
     `;
 
-    const items = hoveddel.ovelser
+    const groups = hoveddel.ovelser
       .map((instans, index) => {
         const master = helpers.getMasterById(instans.ovelseId);
         const emoji = master?.emoji || "🏃";
@@ -229,10 +229,28 @@
           ${selectedAltCards}
         </div>
       `;
-      })
-      .join("");
+      });
 
-    return items || '<p class="hint">Ingen øvelser lagt til ennå.</p>';
+    if (groups.length === 0) return '<p class="hint">Ingen øvelser lagt til ennå.</p>';
+
+    const totalExerciseCount = hoveddel.ovelser.reduce(
+      (sum, instans) => sum + 1 + (instans.alternativer?.length || 0),
+      0
+    );
+    const useTwoColumns = totalExerciseCount > 4;
+    if (!useTwoColumns) {
+      return groups.join("");
+    }
+
+    const splitIndex = Math.ceil(hoveddel.ovelser.length / 2);
+    const col1 = groups.slice(0, splitIndex).join("");
+    const col2 = groups.slice(splitIndex).join("");
+    return `
+      <div class="exercise-columns">
+        <div class="exercise-column">${col1}</div>
+        <div class="exercise-column">${col2}</div>
+      </div>
+    `;
   }
 
   function renderLibrary() {

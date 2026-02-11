@@ -79,15 +79,18 @@
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
   align-items: start;
+  grid-auto-rows: min-content;
 }
 
 .library.is-selection-mode .library-card {
   align-self: start;
   align-content: start;
+  min-width: 0;
 }
 
 .library.is-selection-mode .library-card-media {
   aspect-ratio: 16 / 9;
+  width: 100%;
 }
 
 .library.is-selection-mode .library-card-media img {
@@ -107,6 +110,7 @@
 
 .library.is-selection-mode .library-card-config {
   margin-top: 0;
+  min-width: 0;
 }
 
 .library.is-selection-mode .library-config-row {
@@ -117,16 +121,30 @@
   padding: 8px;
   display: grid;
   gap: 8px;
+  min-width: 0;
 }
 
 .library.is-selection-mode .library-config-readonly {
   font-size: 13px;
   font-weight: 600;
+  min-width: 0;
 }
 
 .library.is-selection-mode .library-config-actions {
   display: flex;
   gap: 8px;
+  flex-wrap: wrap;
+}
+
+.library.is-selection-mode .library-config-row .select {
+  width: 100%;
+  min-width: 0;
+}
+
+.library.is-selection-mode .library-config-row .inline-input.wide {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .add-btn {

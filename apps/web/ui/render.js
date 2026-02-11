@@ -7,79 +7,40 @@
 
   const programRootEl = els.programRootEl;
 
-  function renderAltPickerControls(instansId) {
+  function renderAltPickerControls() {
     const picker = state.ui.altPicker;
-    if (!picker || picker.instansId !== instansId) return "";
+    const selection = state.ui.librarySelection;
+    if (!picker || !selection) return "";
+    if (
+      picker.instansId !== selection.instansId ||
+      picker.retning !== selection.retning
+    ) {
+      return "";
+    }
+
+    const selectedMaster = helpers.getMasterById(picker.ovelseId);
+    if (!selectedMaster) return "";
 
     const preset = picker.narBrukesPreset;
     const egendefinertVisible = preset === "Egendefinert";
 
     return `
-    <select class="select" data-action="alt-preset">
-      <option${preset === "Når smerte og funksjon er akseptabel" ? " selected" : ""}>Når smerte og funksjon er akseptabel</option>
-      <option${preset === "Når øvelsen kjennes lett og kontrollert" ? " selected" : ""}>Når øvelsen kjennes lett og kontrollert</option>
-      <option${preset === "Ved økt smerte eller redusert kontroll" ? " selected" : ""}>Ved økt smerte eller redusert kontroll</option>
-      <option${preset === "Ved behov for enklere variant" ? " selected" : ""}>Ved behov for enklere variant</option>
-      <option${preset === "Egendefinert" ? " selected" : ""}>Egendefinert</option>
-    </select>
-    ${egendefinertVisible ? `<input class="inline-input wide" data-action="alt-custom" placeholder="Kort, konkret linje" value="${picker.narBrukesEgendefinertTekst}" />` : ""}
-    <button class="action-btn" data-action="alt-save">Lagre</button>
-    <button class="action-btn" data-action="alt-cancel">Avbryt</button>
-  `;
-  }
-
-  function renderAlternativer(instans, master, retning, label) {
-    const slugs =
-      retning === "progresjon"
-        ? master.standardProgresjon || []
-        : master.standardRegresjon || [];
-    const showMore = state.ui.showMore[instans.ovelseInstansId]?.[retning] || false;
-    const visible = showMore ? slugs : slugs.slice(0, 3);
-    const hasMoreToggle = slugs.length > 3;
-
-    const existingCount = (instans.alternativer || []).filter(
-      (a) => a.retning === retning
-    ).length;
-
-    const list = visible
-      .map((slug) => {
-        const altMaster = helpers.getMasterById(slug);
-        if (!altMaster) return "";
-        const isPicking =
-          state.ui.altPicker &&
-          state.ui.altPicker.instansId === instans.ovelseInstansId &&
-          state.ui.altPicker.retning === retning &&
-          state.ui.altPicker.ovelseId === slug;
-        const addDisabled = existingCount >= 3;
-
-        return `
-        <div class="alt-item">
-          <strong>${altMaster.navn}</strong>
-          ${altMaster.tagger && altMaster.tagger[0] ? `<span class="tag">${altMaster.tagger[0]}</span>` : ""}
-          <div class="alt-actions">
-            <button class="action-btn" data-action="add-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="${retning}" data-alt-id="${slug}" ${addDisabled ? "disabled" : ""}>Legg til</button>
-            ${isPicking ? renderAltPickerControls(instans.ovelseInstansId) : ""}
-          </div>
+      <div class="library-config-row">
+        <div class="library-config-readonly">${selectedMaster.navn}</div>
+        <select class="select" data-action="alt-preset">
+          <option${preset === "Når smerte og funksjon er akseptabel" ? " selected" : ""}>Når smerte og funksjon er akseptabel</option>
+          <option${preset === "Når øvelsen kjennes lett og kontrollert" ? " selected" : ""}>Når øvelsen kjennes lett og kontrollert</option>
+          <option${preset === "Ved økt smerte eller redusert kontroll" ? " selected" : ""}>Ved økt smerte eller redusert kontroll</option>
+          <option${preset === "Ved behov for enklere variant" ? " selected" : ""}>Ved behov for enklere variant</option>
+          <option${preset === "Egendefinert" ? " selected" : ""}>Egendefinert</option>
+        </select>
+        ${egendefinertVisible ? `<input class="inline-input wide" data-action="alt-custom" placeholder="Kort, konkret linje" value="${picker.narBrukesEgendefinertTekst}" />` : ""}
+        <div class="library-config-actions">
+          <button class="action-btn" data-action="alt-save">Lagre</button>
+          <button class="action-btn" data-action="alt-cancel">Avbryt</button>
         </div>
-      `;
-      })
-      .join("");
-
-    return `
-    <div class="alt-section exercise-children">
-      <div class="alt-header exercise-children-header">
-        <strong>${label}</strong>
-        ${hasMoreToggle ? `
-          <button class="action-btn" data-action="toggle-more" data-instans-id="${instans.ovelseInstansId}" data-retning="${retning}">
-            ${showMore ? "Vis færre" : "Vis flere"}
-          </button>
-        ` : ""}
       </div>
-      <div class="alt-list exercise-children-list">
-        ${list || `<span class="tag">Ingen foreslåtte ${label.toLowerCase()}.</span>`}
-      </div>
-    </div>
-  `;
+    `;
   }
 
   function renderProgramItems() {
@@ -171,7 +132,6 @@
         const videoFilename = getVideoFilename(videoUrl);
         const thumbBase = videoFilename.replace(/\.mp4$/i, "");
         const thumbUrl = videoFilename ? videoAssetUrl(`${thumbBase}.jpg`) : "";
-        const altOpen = state.ui.altSectionOpen[instans.ovelseInstansId] || null;
         const detailsOpen = state.ui.detailsOpen[instans.ovelseInstansId] || false;
 
         const altEntries = (instans.alternativer || []).map((alt, altIndex) => ({
@@ -265,12 +225,6 @@
                 </div>
               </div>
             </div>
-            ${altOpen ? `
-              <div class="expand exercise-children-wrap">
-                ${altOpen === "progresjon" ? renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "progresjon", "Progresjon") : ""}
-                ${altOpen === "regresjon" ? renderAlternativer(instans, master || { standardProgresjon: [], standardRegresjon: [] }, "regresjon", "Regresjon") : ""}
-              </div>
-            ` : ""}
           </div>
           ${selectedAltCards}
         </div>
@@ -283,8 +237,24 @@
 
   function renderLibrary() {
     if (!els.libraryGridEl) return;
+    const selection = state.ui.librarySelection;
     const query = helpers.normalize(state.search);
     const filtered = state.library.filter((item) => helpers.matchesSearch(item, query));
+    let suggestedIds = [];
+    if (selection) {
+      const primary = state.program?.seksjoner
+        ?.find((s) => s.type === "hovedovelser")
+        ?.ovelser?.find((o) => o.ovelseInstansId === selection.instansId);
+      const primaryMaster = primary ? helpers.getMasterById(primary.ovelseId) : null;
+      const source =
+        selection.retning === "progresjon"
+          ? primaryMaster?.standardProgresjon || []
+          : primaryMaster?.standardRegresjon || [];
+      suggestedIds = source
+        .map((id) => String(id || "").trim())
+        .filter(Boolean)
+        .slice(0, 5);
+    }
     const getVideoForExercise = (ovelseId) => {
       const manifest = state.ui.videoManifest;
       if (Array.isArray(manifest)) {
@@ -304,17 +274,42 @@
       return filename;
     };
 
-    els.libraryGridEl.innerHTML = filtered
-      .map((item) => {
-        const disabled = helpers.isInProgram(item.ovelseId);
-        const video = getVideoForExercise(item.ovelseId);
-        const videoUrl = video?.url || "";
-        const videoFilename = getVideoFilename(videoUrl);
-        const displayName =
-          item.ovelseId === "goblet-kneboy" ? "45 graders knebøy" : item.navn || "Forhåndsvis video";
-        const thumbBase = videoFilename.replace(/\.mp4$/i, "");
-        const thumbUrl = videoFilename ? videoAssetUrl(`${thumbBase}.jpg`) : "";
-        return `
+    const renderLibraryCard = (item, options = {}) => {
+      const inProgram = helpers.isInProgram(item.ovelseId);
+      const isSelectionMode = Boolean(selection);
+      const picker = state.ui.altPicker;
+      const isPickingThis =
+        isSelectionMode &&
+        picker &&
+        picker.instansId === selection.instansId &&
+        picker.retning === selection.retning &&
+        picker.ovelseId === item.ovelseId;
+      const headingPrefix = options.prefix || "";
+      const existingCount = isSelectionMode
+        ? (
+            state.program?.seksjoner
+              ?.find((s) => s.type === "hovedovelser")
+              ?.ovelser?.find((o) => o.ovelseInstansId === selection.instansId)
+              ?.alternativer || []
+          ).filter((alt) => alt.retning === selection.retning).length
+        : 0;
+      const addAsAltDisabled = existingCount >= 3;
+      const actionLabel = isSelectionMode
+        ? `Legg til som ${selection.retning}`
+        : "+";
+      const actionData = isSelectionMode
+        ? `data-action="add-alt" data-instans-id="${selection.instansId}" data-retning="${selection.retning}" data-alt-id="${item.ovelseId}"`
+        : `data-action="add-exercise" data-ovelse-id="${item.ovelseId}"`;
+      const actionDisabled = isSelectionMode ? addAsAltDisabled : inProgram;
+      const video = getVideoForExercise(item.ovelseId);
+      const videoUrl = video?.url || "";
+      const videoFilename = getVideoFilename(videoUrl);
+      const displayName =
+        item.ovelseId === "goblet-kneboy" ? "45 graders knebøy" : item.navn || "Forhåndsvis video";
+      const thumbBase = videoFilename.replace(/\.mp4$/i, "");
+      const thumbUrl = videoFilename ? videoAssetUrl(`${thumbBase}.jpg`) : "";
+
+      return `
         <div class="library-card" style="position:relative;">
           <div style="position:relative;height:140px;overflow:hidden;border-radius:10px;">
             ${
@@ -323,7 +318,7 @@
                 : `<div class="emoji">${item.emoji || "💪"}</div>`
             }
             <div style="position:absolute;inset:0;display:flex;align-items:flex-start;justify-content:flex-end;gap:8px;background:transparent;border-radius:10px;padding:8px;">
-              <button class="action-btn" data-action="add-exercise" data-ovelse-id="${item.ovelseId}" ${disabled ? "disabled" : ""} style="background:rgba(255,255,255,0.35);border:1px solid rgba(0,0,0,0.12);box-shadow:0 1px 4px rgba(0,0,0,0.08);">+</button>
+              <button class="action-btn library-add-btn" ${actionData} ${actionDisabled ? "disabled" : ""} style="background:rgba(255,255,255,0.35);border:1px solid rgba(0,0,0,0.12);box-shadow:0 1px 4px rgba(0,0,0,0.08);">${actionLabel}</button>
               ${
                 video && videoFilename
                   ? `<button class="action-btn" data-action="open-inline-video" data-ovelse-id="${item.ovelseId}" data-video-filename="${videoFilename}" data-video-title="${displayName}" style="background:rgba(255,255,255,0.35);border:1px solid rgba(0,0,0,0.12);box-shadow:0 1px 4px rgba(0,0,0,0.08);">▶</button>`
@@ -331,11 +326,54 @@
               }
             </div>
           </div>
-          <h4>${displayName}</h4>
+          <h4>${headingPrefix}${displayName}</h4>
+          ${
+            isSelectionMode
+              ? `<button class="action-btn library-alt-action" ${actionData} ${actionDisabled ? "disabled" : ""}>${actionLabel}</button>`
+              : ""
+          }
+          ${isPickingThis ? renderAltPickerControls() : ""}
         </div>
       `;
+    };
+
+    const suggestedCards = selection
+      ? suggestedIds
+          .map((id) => helpers.getMasterById(id))
+          .filter(Boolean)
+          .map((item) => renderLibraryCard(item, { prefix: "Forslag: " }))
+          .join("")
+      : "";
+
+    const allCards = filtered
+      .map((item) => {
+        return renderLibraryCard(item);
       })
       .join("");
+    els.libraryGridEl.innerHTML = `
+      ${
+        selection && suggestedCards
+          ? `<section class="library-selection-controls">
+              <button class="action-btn" data-action="cancel-library-selection">Avbryt</button>
+            </section>
+            <section class="library-suggestions">
+              <h3>Forslag</h3>
+              <div class="library-grid library-suggestions-grid">${suggestedCards}</div>
+            </section>`
+          : selection
+            ? `<section class="library-selection-controls">
+                <button class="action-btn" data-action="cancel-library-selection">Avbryt</button>
+              </section>`
+          : ""
+      }
+      ${
+        selection
+          ? '<section class="library-search-results"><h3>Søk i hele biblioteket</h3>'
+          : ""
+      }
+      <div class="library-grid library-list">${allCards}</div>
+      ${selection ? "</section>" : ""}
+    `;
   }
 
   function renderVideoPreviewModal() {
@@ -841,6 +879,24 @@
       els.programStatusEl.textContent =
         state.program?.status === "klar" ? "Klar" : "Utkast";
     }
+    if (els.libraryTitleEl) {
+      if (state.ui.librarySelection?.retning === "progresjon") {
+        els.libraryTitleEl.textContent = "Progresjonsøvelser";
+      } else if (state.ui.librarySelection?.retning === "regresjon") {
+        els.libraryTitleEl.textContent = "Regresjonsøvelser";
+      } else {
+        els.libraryTitleEl.textContent = "Øvelsesbibliotek";
+      }
+    }
+    if (els.libraryContextEl) {
+      if (state.ui.librarySelection) {
+        const retning = state.ui.librarySelection.retning;
+        const retningLabel = retning === "progresjon" ? "progresjon" : "regresjon";
+        els.libraryContextEl.textContent = `Velg ${retningLabel} for: ${state.ui.librarySelection.primaryExerciseName}`;
+      } else {
+        els.libraryContextEl.textContent = "";
+      }
+    }
 
     const hoveddel = helpers.getHoveddelSection();
     const manglerUtforelse = isBuilder
@@ -870,6 +926,10 @@
       }
     }
     renderLibrary();
+    if (state.ui.librarySelection?.focusPending && els.libraryPanelEl) {
+      state.ui.librarySelection.focusPending = false;
+      els.libraryPanelEl.focus();
+    }
   }
 
   return {

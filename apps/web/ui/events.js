@@ -565,9 +565,6 @@ export function bindEvents({
       if (action === "toggle-alt") {
         actions.toggleAltSection(instansId, target.dataset.retning);
       }
-      if (action === "toggle-more") {
-        actions.toggleShowMore(instansId, target.dataset.retning);
-      }
       if (action === "add-alt") {
         actions.openAltPicker(instansId, target.dataset.retning, target.dataset.altId);
       }
@@ -772,6 +769,20 @@ export function bindEvents({
   }
 
   if (els.libraryGridEl) {
+    els.libraryGridEl.addEventListener("input", (event) => {
+      const target = event.target;
+      if (target.dataset.action === "alt-custom") {
+        actions.setAltCustom(target.value);
+      }
+    });
+
+    els.libraryGridEl.addEventListener("change", (event) => {
+      const target = event.target;
+      if (target.dataset.action === "alt-preset") {
+        actions.setAltPreset(target.value);
+      }
+    });
+
     els.libraryGridEl.addEventListener("click", (event) => {
       const target = event.target;
       const actionTarget = target.closest("[data-action]");
@@ -783,6 +794,30 @@ export function bindEvents({
         const master = actions.getMasterById(ovelseId);
         if (!master) return;
         actions.addExercise(master);
+        return;
+      }
+
+      if (action === "add-alt") {
+        const instansId = actionTarget.dataset.instansId;
+        const retning = actionTarget.dataset.retning;
+        const altId = actionTarget.dataset.altId;
+        if (!instansId || !retning || !altId) return;
+        actions.openAltPicker(instansId, retning, altId);
+        return;
+      }
+
+      if (action === "cancel-library-selection") {
+        actions.cancelLibrarySelection();
+        return;
+      }
+
+      if (action === "alt-cancel") {
+        actions.cancelAltPicker();
+        return;
+      }
+
+      if (action === "alt-save") {
+        actions.saveAltPicker();
         return;
       }
 
@@ -799,4 +834,12 @@ export function bindEvents({
       }
     });
   }
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (state.ui.exercisePreview?.isOpen) return;
+    if (state.ui.librarySelection) {
+      actions.cancelLibrarySelection();
+    }
+  });
 }

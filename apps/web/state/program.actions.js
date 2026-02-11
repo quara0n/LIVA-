@@ -164,6 +164,10 @@
     hoveddel.ovelser = hoveddel.ovelser.filter(
       (o) => o.ovelseInstansId !== instansId
     );
+    if (state.ui.librarySelection?.instansId === instansId) {
+      state.ui.librarySelection = null;
+      state.ui.altPicker = null;
+    }
     delete state.ui.altSectionOpen[instansId];
     delete state.ui.detailsOpen[instansId];
     delete state.ui.altDetailsOpen[instansId];
@@ -208,8 +212,27 @@
 
   function toggleAltSection(instansId, retning) {
     if (!retning) return;
-    state.ui.altSectionOpen[instansId] =
-      state.ui.altSectionOpen[instansId] === retning ? null : retning;
+    const hoveddel = getHoveddelSection();
+    const instans = hoveddel?.ovelser?.find((o) => o.ovelseInstansId === instansId);
+    if (!instans) return;
+    if (
+      state.ui.librarySelection &&
+      state.ui.librarySelection.instansId === instansId &&
+      state.ui.librarySelection.retning === retning
+    ) {
+      state.ui.librarySelection = null;
+      state.ui.altPicker = null;
+      render.full();
+      return;
+    }
+    state.ui.librarySelection = {
+      instansId,
+      retning,
+      primaryExerciseName: instans.navn || "",
+      focusPending: true,
+    };
+    state.ui.altSectionOpen[instansId] = retning;
+    state.ui.altPicker = null;
     render.full();
   }
 
@@ -238,16 +261,6 @@
     render.full();
   }
 
-  function toggleShowMore(instansId, retning) {
-    state.ui.showMore[instansId] = state.ui.showMore[instansId] || {
-      progresjon: false,
-      regresjon: false,
-    };
-    state.ui.showMore[instansId][retning] =
-      !state.ui.showMore[instansId][retning];
-    render.full();
-  }
-
   function openAltPicker(instansId, retning, ovelseId) {
     state.ui.altPicker = {
       instansId,
@@ -260,6 +273,12 @@
   }
 
   function cancelAltPicker() {
+    state.ui.altPicker = null;
+    render.full();
+  }
+
+  function cancelLibrarySelection() {
+    state.ui.librarySelection = null;
     state.ui.altPicker = null;
     render.full();
   }
@@ -314,6 +333,7 @@
 
     state.ui.altPicker = null;
     state.ui.altSectionOpen[picker.instansId] = null;
+    state.ui.librarySelection = null;
     markUnsavedChanges();
     saveDraft(state.program);
     render.full();
@@ -551,6 +571,7 @@
     state.ui.altSectionOpen = {};
     state.ui.showMore = {};
     state.ui.altPicker = null;
+    state.ui.librarySelection = null;
     state.ui.detailsOpen = {};
     state.ui.altDetailsOpen = {};
     state.ui.nameError = "";
@@ -932,9 +953,9 @@
     toggleAltSection,
     toggleDetails,
     toggleAltDetails,
-    toggleShowMore,
     openAltPicker,
     cancelAltPicker,
+    cancelLibrarySelection,
     saveAltPicker,
     setSearch,
     setNotater,

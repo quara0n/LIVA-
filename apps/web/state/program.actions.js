@@ -171,6 +171,7 @@
     delete state.ui.altSectionOpen[instansId];
     delete state.ui.detailsOpen[instansId];
     delete state.ui.altDetailsOpen[instansId];
+    delete state.ui.altCriteriaOpen[instansId];
     markUnsavedChanges();
     saveDraft(state.program);
     render.full();
@@ -248,6 +249,12 @@
     render.full();
   }
 
+  function toggleAltCriteriaPanel(instansId, altIndex) {
+    const current = state.ui.altCriteriaOpen[instansId];
+    state.ui.altCriteriaOpen[instansId] = current === altIndex ? null : altIndex;
+    render.full();
+  }
+
   function removeAlt(instansId, altIndex) {
     const hoveddel = getHoveddelSection();
     const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
@@ -256,6 +263,7 @@
     if (state.ui.altDetailsOpen[instansId]) {
       state.ui.altDetailsOpen[instansId] = {};
     }
+    state.ui.altCriteriaOpen[instansId] = null;
     markUnsavedChanges();
     saveDraft(state.program);
     render.full();
@@ -266,7 +274,9 @@
       instansId,
       retning,
       ovelseId,
-      narBrukesPreset: "Når smerte og funksjon er akseptabel",
+      narBrukesPresetValg: ["Når smerte og funksjon er akseptabel"],
+      dropdownOpen: false,
+      brukEgendefinertTekst: false,
       narBrukesEgendefinertTekst: "",
     };
     render.full();
@@ -287,8 +297,15 @@
     const picker = state.ui.altPicker;
     if (!picker) return;
 
+    const presets = Array.isArray(picker.narBrukesPresetValg)
+      ? picker.narBrukesPresetValg.filter(Boolean)
+      : [];
+    if (presets.length === 0) {
+      showToast("Velg minst ett kriterium.");
+      return;
+    }
     if (
-      picker.narBrukesPreset === "Egendefinert" &&
+      picker.brukEgendefinertTekst &&
       !picker.narBrukesEgendefinertTekst.trim()
     ) {
       showToast("Skriv en kort egendefinert linje.");
@@ -324,9 +341,9 @@
         reps: 10,
         sett: 3,
       },
-      narBrukesPreset: picker.narBrukesPreset,
+      narBrukesPreset: presets.join("\n"),
       narBrukesEgendefinertTekst:
-        picker.narBrukesPreset === "Egendefinert"
+        picker.brukEgendefinertTekst
           ? picker.narBrukesEgendefinertTekst.trim()
           : undefined,
     });
@@ -354,7 +371,12 @@
 
   function setAltPreset(value) {
     if (!state.ui.altPicker) return;
-    state.ui.altPicker.narBrukesPreset = value;
+    state.ui.altPicker.narBrukesPresetValg = value
+      ? String(value)
+          .split("\n")
+          .map((item) => item.trim())
+          .filter(Boolean)
+      : [];
     render.full();
   }
 
@@ -378,6 +400,43 @@
   function setAltCustom(value) {
     if (!state.ui.altPicker) return;
     state.ui.altPicker.narBrukesEgendefinertTekst = value;
+  }
+
+  function toggleAltPresetDropdown() {
+    if (!state.ui.altPicker) return;
+    state.ui.altPicker.dropdownOpen = !state.ui.altPicker.dropdownOpen;
+    render.full();
+  }
+
+  function closeAltPresetDropdown() {
+    if (!state.ui.altPicker || !state.ui.altPicker.dropdownOpen) return;
+    state.ui.altPicker.dropdownOpen = false;
+    render.full();
+  }
+
+  function toggleAltPresetOption(value) {
+    if (!state.ui.altPicker || !value) return;
+    const current = Array.isArray(state.ui.altPicker.narBrukesPresetValg)
+      ? [...state.ui.altPicker.narBrukesPresetValg]
+      : [];
+    const index = current.indexOf(value);
+    if (index >= 0) {
+      current.splice(index, 1);
+    } else {
+      current.push(value);
+    }
+    state.ui.altPicker.narBrukesPresetValg = current;
+    render.full();
+  }
+
+  function toggleAltCustomEnabled() {
+    if (!state.ui.altPicker) return;
+    state.ui.altPicker.brukEgendefinertTekst =
+      !state.ui.altPicker.brukEgendefinertTekst;
+    if (!state.ui.altPicker.brukEgendefinertTekst) {
+      state.ui.altPicker.narBrukesEgendefinertTekst = "";
+    }
+    render.full();
   }
 
   function setProgramName(value) {
@@ -574,6 +633,7 @@
     state.ui.librarySelection = null;
     state.ui.detailsOpen = {};
     state.ui.altDetailsOpen = {};
+    state.ui.altCriteriaOpen = {};
     state.ui.nameError = "";
     state.ui.startDetailsPurpose = null;
     state.ui.startDetailsName = "";
@@ -953,6 +1013,7 @@
     toggleAltSection,
     toggleDetails,
     toggleAltDetails,
+    toggleAltCriteriaPanel,
     openAltPicker,
     cancelAltPicker,
     cancelLibrarySelection,
@@ -962,6 +1023,10 @@
     setAltPreset,
     updateAltField,
     setAltCustom,
+    toggleAltPresetDropdown,
+    closeAltPresetDropdown,
+    toggleAltPresetOption,
+    toggleAltCustomEnabled,
     setProgramName,
     setProgramEmail,
     setProgramPhone,

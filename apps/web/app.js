@@ -41,6 +41,7 @@ const state = {
     librarySelection: null,
     detailsOpen: {},
     altDetailsOpen: {},
+    altCriteriaOpen: {},
     panelView: "start",
     templateOrigin: null,
     loadOrigin: null,

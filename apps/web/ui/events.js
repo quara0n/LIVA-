@@ -579,6 +579,11 @@ export function bindEvents({
         const altIndex = Number(target.dataset.altIndex);
         actions.removeAlt(instansId, altIndex);
       }
+      if (action === "toggle-alt-criteria") {
+        const altIndex = Number(target.dataset.altIndex);
+        if (Number.isNaN(altIndex)) return;
+        actions.toggleAltCriteriaPanel(instansId, altIndex);
+      }
     });
 
     els.programRootEl.addEventListener("keydown", (event) => {
@@ -821,6 +826,22 @@ export function bindEvents({
         return;
       }
 
+      if (action === "toggle-alt-preset-dropdown") {
+        actions.toggleAltPresetDropdown();
+        return;
+      }
+
+      if (action === "toggle-alt-preset-option") {
+        const value = actionTarget.dataset.value || "";
+        actions.toggleAltPresetOption(value);
+        return;
+      }
+
+      if (action === "toggle-alt-custom-enabled") {
+        actions.toggleAltCustomEnabled();
+        return;
+      }
+
       if (action === "open-inline-video") {
         const videoFilename = actionTarget.dataset.videoFilename || "";
         const videoTitle = actionTarget.dataset.videoTitle || "";
@@ -835,9 +856,20 @@ export function bindEvents({
     });
   }
 
+  document.addEventListener("click", (event) => {
+    if (!state.ui.altPicker?.dropdownOpen) return;
+    const target = event.target;
+    if (target?.closest?.("[data-role='alt-multiselect']")) return;
+    actions.closeAltPresetDropdown();
+  });
+
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (state.ui.exercisePreview?.isOpen) return;
+    if (state.ui.altPicker?.dropdownOpen) {
+      actions.closeAltPresetDropdown();
+      return;
+    }
     if (state.ui.librarySelection) {
       actions.cancelLibrarySelection();
     }

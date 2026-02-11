@@ -530,6 +530,51 @@
   text-overflow: ellipsis;
 }
 
+.criteria-chip {
+  border: 1px solid var(--border);
+  background: #f2efe8;
+  color: var(--ink);
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.criteria-chip:hover {
+  background: #ece7de;
+}
+
+.criteria-inline-panel {
+  width: 100%;
+  border: 1px solid var(--border);
+  background: #fffdf8;
+  border-radius: 10px;
+  padding: 8px;
+  display: grid;
+  gap: 8px;
+}
+
+.criteria-flow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.criteria-arrow {
+  color: var(--ink);
+}
+
+.criteria-list {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+}
+
 .exercise-alt-card .exercise-helper {
   font-size: 12px;
   color: var(--muted);

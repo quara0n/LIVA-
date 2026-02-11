@@ -18,23 +18,49 @@
       return "";
     }
 
-    const selectedMaster = helpers.getMasterById(picker.ovelseId);
-    if (!selectedMaster) return "";
-
-    const preset = picker.narBrukesPreset;
-    const egendefinertVisible = preset === "Egendefinert";
+    const presetOptions = [
+      "Når smerte og funksjon er akseptabel",
+      "Når øvelsen kjennes lett og kontrollert",
+      "Ved økt smerte eller redusert kontroll",
+      "Ved behov for enklere variant",
+    ];
+    const selected = Array.isArray(picker.narBrukesPresetValg)
+      ? picker.narBrukesPresetValg
+      : [];
+    const selectedCount = selected.length;
+    const triggerLabel = selectedCount > 0 ? `${selectedCount} valgt` : "Velg kriterier";
 
     return `
       <div class="library-config-row">
-        <div class="library-config-readonly">${selectedMaster.navn}</div>
-        <select class="select" data-action="alt-preset">
-          <option${preset === "Når smerte og funksjon er akseptabel" ? " selected" : ""}>Når smerte og funksjon er akseptabel</option>
-          <option${preset === "Når øvelsen kjennes lett og kontrollert" ? " selected" : ""}>Når øvelsen kjennes lett og kontrollert</option>
-          <option${preset === "Ved økt smerte eller redusert kontroll" ? " selected" : ""}>Ved økt smerte eller redusert kontroll</option>
-          <option${preset === "Ved behov for enklere variant" ? " selected" : ""}>Ved behov for enklere variant</option>
-          <option${preset === "Egendefinert" ? " selected" : ""}>Egendefinert</option>
-        </select>
-        ${egendefinertVisible ? `<input class="inline-input wide" data-action="alt-custom" placeholder="Kort, konkret linje" value="${picker.narBrukesEgendefinertTekst}" />` : ""}
+        <div class="library-multiselect" data-role="alt-multiselect">
+          <button class="select library-multiselect-trigger" data-action="toggle-alt-preset-dropdown" aria-expanded="${picker.dropdownOpen ? "true" : "false"}">${triggerLabel}</button>
+          ${
+            picker.dropdownOpen
+              ? `<div class="library-multiselect-menu">
+                  ${presetOptions
+                    .map((option) => {
+                      const checked = selected.includes(option);
+                      return `
+                        <button class="library-multiselect-item" data-action="toggle-alt-preset-option" data-value="${option}" aria-pressed="${checked ? "true" : "false"}">
+                          <input type="checkbox" tabindex="-1" ${checked ? "checked" : ""} />
+                          <span>${option}</span>
+                        </button>
+                      `;
+                    })
+                    .join("")}
+                  <button class="library-multiselect-item" data-action="toggle-alt-custom-enabled" aria-pressed="${picker.brukEgendefinertTekst ? "true" : "false"}">
+                    <input type="checkbox" tabindex="-1" ${picker.brukEgendefinertTekst ? "checked" : ""} />
+                    <span>Eget kriterium ...</span>
+                  </button>
+                </div>`
+              : ""
+          }
+        </div>
+        ${
+          picker.brukEgendefinertTekst
+            ? `<input class="inline-input wide" data-action="alt-custom" placeholder="Kort, konkret linje" value="${picker.narBrukesEgendefinertTekst}" />`
+            : ""
+        }
         <div class="library-config-actions">
           <button class="action-btn" data-action="alt-save">Lagre</button>
           <button class="action-btn" data-action="alt-cancel">Avbryt</button>
@@ -123,6 +149,16 @@
       </div>
     `;
 
+    const parseCriteriaItems = (alt) => {
+      const preset = String(alt?.narBrukesPreset || "");
+      const presetItems = preset
+        .split("\n")
+        .map((item) => item.trim())
+        .filter(Boolean);
+      const custom = String(alt?.narBrukesEgendefinertTekst || "").trim();
+      return custom ? [...presetItems, custom] : presetItems;
+    };
+
     const groups = hoveddel.ovelser
       .map((instans, index) => {
         const master = helpers.getMasterById(instans.ovelseId);
@@ -157,13 +193,15 @@
           const altThumbUrl = altVideoFilename
             ? videoAssetUrl(`${altThumbBase}.jpg`)
             : "";
-          const narBrukes = `${alt.narBrukesPreset}${
-            alt.narBrukesEgendefinertTekst
-              ? ": " + alt.narBrukesEgendefinertTekst
-              : ""
-          }`;
-          const helperText = String(narBrukes || "").trim();
           const retningLabel = alt.retning === "progresjon" ? "Progresjon" : "Regresjon";
+          const criteriaLabel =
+            alt.retning === "progresjon"
+              ? "Progresjonskriterier"
+              : "Regresjonskriterier";
+          const criteriaItems = parseCriteriaItems(alt);
+          const hasCriteria = criteriaItems.length > 0;
+          const criteriaOpen =
+            state.ui.altCriteriaOpen?.[instans.ovelseInstansId] === altIndex;
 
           return `
           <div class="exercise-card exercise-item exercise-alt-card" data-action="open-exercise-preview" data-instans-id="${instans.ovelseInstansId}" data-alt-index="${altIndex}" data-alt-retning="${alt.retning}">
@@ -172,7 +210,13 @@
             <div class="exercise-title" style="display:flex;flex-direction:column;gap:8px;align-items:flex-start;">
               <div class="exercise-title-row">
                 <h4>${alt.navn}</h4>
-                ${helperText ? `<span class="exercise-helper">${helperText}</span>` : ""}
+                ${
+                  hasCriteria
+                    ? `<button class="criteria-chip" data-action="toggle-alt-criteria" data-instans-id="${instans.ovelseInstansId}" data-alt-index="${altIndex}">
+                        ✓ ${criteriaLabel} ▾
+                      </button>`
+                    : ""
+                }
               </div>
               <div class="exercise-media-row">
                 ${renderExerciseMedia(altThumbUrl, altEmoji, alt.navn, altVideoFilename)}
@@ -188,6 +232,22 @@
                   tidValue: alt.dosering?.varighetSek || 0,
                 })}
               </div>
+              ${
+                hasCriteria && criteriaOpen
+                  ? `<div class="criteria-inline-panel">
+                      <div class="criteria-flow">
+                        <span>Primær: ${instans.navn}</span>
+                        <span class="criteria-arrow">↓</span>
+                        <span>Alternativ: ${alt.navn}</span>
+                      </div>
+                      <ul class="criteria-list">
+                        ${criteriaItems
+                          .map((item) => `<li>${item}</li>`)
+                          .join("")}
+                      </ul>
+                    </div>`
+                  : ""
+              }
             </div>
           </div>
         `;

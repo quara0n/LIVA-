@@ -238,6 +238,11 @@
   function renderLibrary() {
     if (!els.libraryGridEl) return;
     const selection = state.ui.librarySelection;
+    const isSelectionMode = Boolean(selection);
+    if (els.libraryPanelEl) {
+      els.libraryPanelEl.classList.toggle("is-selection-mode", isSelectionMode);
+    }
+    els.libraryGridEl.classList.toggle("is-selection-mode", isSelectionMode);
     const query = helpers.normalize(state.search);
     const filtered = state.library.filter((item) => helpers.matchesSearch(item, query));
     let suggestedIds = [];
@@ -276,7 +281,6 @@
 
     const renderLibraryCard = (item, options = {}) => {
       const inProgram = helpers.isInProgram(item.ovelseId);
-      const isSelectionMode = Boolean(selection);
       const picker = state.ui.altPicker;
       const isPickingThis =
         isSelectionMode &&
@@ -350,6 +354,11 @@
         return renderLibraryCard(item);
       })
       .join("");
+    if (!isSelectionMode) {
+      els.libraryGridEl.innerHTML = allCards;
+      return;
+    }
+
     els.libraryGridEl.innerHTML = `
       ${
         selection && suggestedCards
@@ -358,7 +367,7 @@
             </section>
             <section class="library-suggestions">
               <h3>Forslag</h3>
-              <div class="library-grid library-suggestions-grid">${suggestedCards}</div>
+              <div class="library-mode-grid library-suggestions-grid">${suggestedCards}</div>
             </section>`
           : selection
             ? `<section class="library-selection-controls">
@@ -371,7 +380,7 @@
           ? '<section class="library-search-results"><h3>Søk i hele biblioteket</h3>'
           : ""
       }
-      <div class="library-grid library-list">${allCards}</div>
+      <div class="library-mode-grid library-list">${allCards}</div>
       ${selection ? "</section>" : ""}
     `;
   }

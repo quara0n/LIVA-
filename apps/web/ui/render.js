@@ -935,7 +935,17 @@
     renderLibrary();
     if (state.ui.librarySelection?.focusPending && els.libraryPanelEl) {
       state.ui.librarySelection.focusPending = false;
-      els.libraryPanelEl.focus();
+      els.libraryPanelEl.scrollTop = 0;
+      if (els.libraryGridEl) {
+        els.libraryGridEl.scrollTop = 0;
+      }
+      if (els.searchInputEl) {
+        els.searchInputEl.scrollIntoView({
+          block: "nearest",
+          inline: "nearest",
+        });
+      }
+      els.libraryPanelEl.focus({ preventScroll: true });
     }
   }
 

@@ -78,6 +78,12 @@
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 14px;
+  align-items: start;
+}
+
+.library.is-selection-mode .library-card {
+  align-self: start;
+  align-content: start;
 }
 
 .library.is-selection-mode .library-card-media {

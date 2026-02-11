@@ -331,11 +331,6 @@
             </div>
           </div>
           <h4>${headingPrefix}${displayName}</h4>
-          ${
-            isSelectionMode
-              ? `<button class="action-btn library-alt-action" ${actionData} ${actionDisabled ? "disabled" : ""}>${actionLabel}</button>`
-              : ""
-          }
           ${isPickingThis ? renderAltPickerControls() : ""}
         </div>
       `;
@@ -377,11 +372,9 @@
       }
       ${
         selection
-          ? '<section class="library-search-results"><h3>Søk i hele biblioteket</h3>'
-          : ""
+          ? `<section class="library-search-results"><div class="library-mode-grid library-list">${allCards}</div></section>`
+          : `<div class="library-grid library-list">${allCards}</div>`
       }
-      <div class="library-mode-grid library-list">${allCards}</div>
-      ${selection ? "</section>" : ""}
     `;
   }
 
@@ -890,9 +883,9 @@
     }
     if (els.libraryTitleEl) {
       if (state.ui.librarySelection?.retning === "progresjon") {
-        els.libraryTitleEl.textContent = "Progresjonsøvelser";
+        els.libraryTitleEl.textContent = "Progresjonsøvelser – legg til øvelser";
       } else if (state.ui.librarySelection?.retning === "regresjon") {
-        els.libraryTitleEl.textContent = "Regresjonsøvelser";
+        els.libraryTitleEl.textContent = "Regresjonsøvelser – legg til øvelser";
       } else {
         els.libraryTitleEl.textContent = "Øvelsesbibliotek";
       }

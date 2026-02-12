@@ -173,6 +173,12 @@ export function bindEvents({
     });
   }
 
+  if (els.rehabTemplatesBtn) {
+    els.rehabTemplatesBtn.addEventListener("click", () => {
+      actions.openRehabTemplates();
+    });
+  }
+
   if (els.programRootEl) {
     els.programRootEl.addEventListener("input", (event) => {
       const target = event.target;
@@ -236,6 +242,48 @@ export function bindEvents({
         const altIndex = Number(target.dataset.altIndex);
         if (!instansId || Number.isNaN(altIndex)) return;
         actions.updateAltComment(instansId, altIndex, target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-phase-goal") {
+        const sectionId = target.dataset.sectionId;
+        if (!sectionId) return;
+        actions.updatePhaseField(sectionId, "phaseGoal", target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-phase-title") {
+        const sectionId = target.dataset.sectionId;
+        if (!sectionId) return;
+        actions.updatePhaseTitle(sectionId, target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-phase-focus") {
+        const sectionId = target.dataset.sectionId;
+        const index = Number(target.dataset.index);
+        if (!sectionId || Number.isNaN(index)) return;
+        actions.updatePhaseFocusBullet(sectionId, index, target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-phase-progression") {
+        const sectionId = target.dataset.sectionId;
+        if (!sectionId) return;
+        actions.updatePhaseField(sectionId, "phaseProgressionRule", target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-phase-clinician") {
+        const sectionId = target.dataset.sectionId;
+        if (!sectionId) return;
+        actions.updatePhaseField(sectionId, "phaseClinicianNote", target.value);
+        return;
+      }
+      if (target.dataset.action === "edit-progression-instruction") {
+        const instansId = target.dataset.instansId;
+        const index = Number(target.dataset.index);
+        if (!instansId || Number.isNaN(index)) return;
+        actions.updateProgressionInstruction(instansId, index, target.value);
+        return;
+      }
+      if (target.dataset.action === "rehab-search") {
+        actions.setRehabSearch(target.value);
         return;
       }
       if (target.dataset.action === "edit-notater") {
@@ -444,6 +492,98 @@ export function bindEvents({
       if (action === "start-template") {
         if (!confirmDiscardChanges()) return;
         actions.openStartDetails("template");
+        return;
+      }
+
+      if (action === "close-rehab-templates") {
+        actions.closeRehabTemplates();
+        return;
+      }
+
+      if (action === "rehab-step-back") {
+        actions.rehabStepBack();
+        return;
+      }
+
+      if (action === "select-rehab-template") {
+        const templateId = target.dataset.templateId;
+        if (!templateId) return;
+        actions.selectRehabTemplate(templateId);
+        return;
+      }
+
+      if (action === "select-rehab-subtype") {
+        const subtype = target.dataset.subtype;
+        if (!subtype) return;
+        actions.selectRehabSubtype(subtype);
+        return;
+      }
+
+      if (action === "select-rehab-status") {
+        const status = target.dataset.status;
+        if (!status) return;
+        actions.selectRehabStatus(status);
+        return;
+      }
+
+      if (action === "apply-rehab-template") {
+        actions.applyRehabTemplate();
+        return;
+      }
+
+      if (action === "add-phase") {
+        actions.addPhase();
+        return;
+      }
+
+      if (action === "remove-phase") {
+        const sectionId = target.dataset.sectionId;
+        if (!sectionId) return;
+        actions.removePhase(sectionId);
+        return;
+      }
+
+      if (action === "set-active-phase") {
+        const phaseId = Number(target.dataset.phaseId);
+        if (Number.isNaN(phaseId)) return;
+        actions.setActivePhase(phaseId);
+        return;
+      }
+
+      if (action === "set-active-section") {
+        const sectionId = target.dataset.sectionId;
+        if (!sectionId) return;
+        actions.setActiveSection(sectionId);
+        return;
+      }
+
+      if (action === "add-progression-instruction") {
+        const instansId = target.dataset.instansId;
+        if (!instansId) return;
+        actions.addProgressionInstruction(instansId);
+        return;
+      }
+
+      if (action === "remove-progression-instruction") {
+        const instansId = target.dataset.instansId;
+        const index = Number(target.dataset.index);
+        if (!instansId || Number.isNaN(index)) return;
+        actions.removeProgressionInstruction(instansId, index);
+        return;
+      }
+
+      if (action === "toggle-progression-criteria") {
+        const instansId = target.dataset.instansId;
+        if (!instansId) return;
+        actions.toggleProgressionCriteriaDropdown(instansId);
+        return;
+      }
+
+      if (action === "toggle-progression-criteria-option") {
+        const instansId = target.dataset.instansId;
+        const value = actionTarget.dataset.value || "";
+        if (!instansId || !value) return;
+        actions.toggleProgressionCriteriaOption(instansId, value);
         return;
       }
 
@@ -863,9 +1003,20 @@ export function bindEvents({
     actions.closeAltPresetDropdown();
   });
 
+  document.addEventListener("click", (event) => {
+    if (!state.ui.progressionCriteriaOpen) return;
+    const target = event.target;
+    if (target?.closest?.("[data-role='progression-criteria']")) return;
+    actions.closeProgressionCriteriaDropdown();
+  });
+
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
     if (state.ui.exercisePreview?.isOpen) return;
+    if (state.ui.rehabOverlay?.isOpen) {
+      actions.closeRehabTemplates();
+      return;
+    }
     if (state.ui.altPicker?.dropdownOpen) {
       actions.closeAltPresetDropdown();
       return;

@@ -22,12 +22,155 @@ const DATA_PATHS = {
   ],
 };
 
+function buildRehabProgramPayload({
+  templateId,
+  templateName,
+  subtype,
+  subtypeLabel,
+  status,
+  statusLabel,
+}) {
+  const title = `${templateName} – ${subtypeLabel} – ${statusLabel}`;
+  return {
+    title,
+    meta: {
+      rehabTemplate: true,
+      rehabTemplateId: templateId,
+      rehabSubtype: subtype,
+      rehabStatus: status,
+      rehabLabel: title,
+    },
+    sections: [
+      {
+        title: "Fase 0",
+        phaseGoal: "Dempe smerte og etablere trygg belastning.",
+        phaseFocusBullets: ["Kontrollert tempo", "Tåle lett belastning"],
+        phaseProgressionRule: "24t-respons uten forverring",
+        phaseClinicianNote: "",
+        exercises: [
+          {
+            name: "Isometrisk tåhev",
+            execution: "Hold topposisjon i rolig tempo.",
+            dosage: { reps: 5, sett: 3 },
+          },
+        ],
+      },
+      {
+        title: "Fase 1",
+        phaseGoal: "Bygge grunnstyrke i sene.",
+        phaseFocusBullets: ["Toleranse for økt volum"],
+        phaseProgressionRule: "Smerte ≤ 3/10",
+        phaseClinicianNote: "",
+        exercises: [
+          {
+            name: "Tåhev på ett ben",
+            execution: "Kontrollert opp og ned.",
+            dosage: { reps: 8, sett: 3 },
+          },
+        ],
+      },
+      {
+        title: "Fase 2",
+        phaseGoal: "Øke kapasitet og eksentrisk kontroll.",
+        phaseFocusBullets: ["Eksentrisk fokus", "Jevn progresjon"],
+        phaseProgressionRule: "24t-respons stabil",
+        phaseClinicianNote: "",
+        exercises: [
+          {
+            name: "Eksentrisk tåhev",
+            execution: "Senk rolig ned på ett ben.",
+            dosage: { reps: 6, sett: 4 },
+          },
+        ],
+      },
+      {
+        title: "Fase 3",
+        phaseGoal: "Returnere til høyere belastning.",
+        phaseFocusBullets: ["Kontrollert kraftutvikling"],
+        phaseProgressionRule: "Smertefri respons",
+        phaseClinicianNote: "",
+        exercises: [
+          {
+            name: "Hopp/plyometrisk belastning",
+            execution: "Lett belastning, fokus på kontroll.",
+            dosage: { reps: 10, sett: 2 },
+          },
+        ],
+      },
+    ],
+  };
+}
+
+const REHAB_TEMPLATES = [
+  {
+    id: "achilles_tendinopathy",
+    name: "Achilles tendinopati",
+    variants: {
+      midportion: {
+        label: "Midportion",
+        statuses: {
+          acute: {
+            label: "Akutt",
+            programPayload: buildRehabProgramPayload({
+              templateId: "achilles_tendinopathy",
+              templateName: "Achilles",
+              subtype: "midportion",
+              subtypeLabel: "Midportion",
+              status: "acute",
+              statusLabel: "Akutt",
+            }),
+          },
+          chronic: {
+            label: "Kronisk",
+            programPayload: buildRehabProgramPayload({
+              templateId: "achilles_tendinopathy",
+              templateName: "Achilles",
+              subtype: "midportion",
+              subtypeLabel: "Midportion",
+              status: "chronic",
+              statusLabel: "Kronisk",
+            }),
+          },
+        },
+      },
+      insertional: {
+        label: "Insertional",
+        statuses: {
+          acute: {
+            label: "Akutt",
+            programPayload: buildRehabProgramPayload({
+              templateId: "achilles_tendinopathy",
+              templateName: "Achilles",
+              subtype: "insertional",
+              subtypeLabel: "Insertional",
+              status: "acute",
+              statusLabel: "Akutt",
+            }),
+          },
+          chronic: {
+            label: "Kronisk",
+            programPayload: buildRehabProgramPayload({
+              templateId: "achilles_tendinopathy",
+              templateName: "Achilles",
+              subtype: "insertional",
+              subtypeLabel: "Insertional",
+              status: "chronic",
+              statusLabel: "Kronisk",
+            }),
+          },
+        },
+      },
+    },
+  },
+];
+
 const state = {
   program: null,
   programTemplate: null,
   archive: [],
   library: [],
   templates: [],
+  rehabTemplates: REHAB_TEMPLATES,
   search: "",
   patientName: "",
   patientEmail: "",
@@ -52,6 +195,17 @@ const state = {
     startDetailsTemplateId: "",
     patientDetailsOpen: false,
     patientEmailError: "",
+    activeSectionId: "",
+    activePhaseId: null,
+    progressionCriteriaOpen: null,
+    rehabOverlay: {
+      isOpen: false,
+      step: 1,
+      search: "",
+      selectedTemplateId: "",
+      selectedSubtype: "",
+      selectedStatus: "",
+    },
     archiveEditId: null,
     archiveEditName: "",
     archiveEditEmail: "",
@@ -82,6 +236,7 @@ const els = {
   toastEl: document.getElementById("toast"),
   programTitleEl: document.getElementById("program-title"),
   programStatusEl: document.getElementById("program-status"),
+  rehabTemplatesBtn: document.getElementById("rehab-templates-btn"),
   libraryPanelEl: document.getElementById("library-panel"),
   libraryTitleEl: document.getElementById("library-title"),
   libraryContextEl: document.getElementById("library-context"),
@@ -148,6 +303,14 @@ async function loadSeeds() {
   const draft = loadDraft();
   state.programTemplate = await programRes.json();
   state.program = draft || null;
+  state.ui.activeSectionId =
+    draft?.seksjoner?.find((seksjon) => seksjon.aktiv && seksjon.type !== "notater")
+      ?.seksjonId || "";
+  const hasPhases =
+    draft?.seksjoner?.some((seksjon) => Number.isFinite(seksjon.phaseId)) ||
+    draft?.seksjoner?.some((seksjon) => /^Fase\s*\d+/i.test(seksjon.tittel || ""));
+  state.ui.activePhaseId =
+    draft?.meta?.rehabTemplate && hasPhases ? 0 : state.ui.activePhaseId;
   state.patientName = draft?.pasientNavn || "";
   state.patientEmail = draft?.pasientEpost || "";
   state.patientPhone = draft?.pasientTelefon || "";

@@ -83,12 +83,105 @@
     return state.program.seksjoner.find((s) => s.type === type);
   }
 
+  function parsePhaseId(title) {
+    const match = String(title || "").match(/Fase\s*(\d+)/i);
+    if (!match) return null;
+    const value = Number(match[1]);
+    if (!Number.isFinite(value) || value < 0 || value > 3) return null;
+    return value;
+  }
+
+  function getPhaseSections() {
+    if (!state.program) return [];
+    const baseSections = (state.program.seksjoner || []).filter(
+      (seksjon) => seksjon.aktiv && seksjon.type !== "notater"
+    );
+    const hasPhase =
+      baseSections.some((seksjon) => Number.isFinite(seksjon.phaseId)) ||
+      baseSections.some((seksjon) => parsePhaseId(seksjon.tittel) !== null);
+    if (!hasPhase) return [];
+    return baseSections
+      .map((seksjon) => {
+        const phaseId = Number.isFinite(seksjon.phaseId)
+          ? Number(seksjon.phaseId)
+          : parsePhaseId(seksjon.tittel);
+        return phaseId === null ? null : { seksjon, phaseId };
+      })
+      .filter(Boolean)
+      .sort((a, b) => a.phaseId - b.phaseId);
+  }
+
   function getHoveddelSection() {
-    return getSection("hovedovelser");
+    return getActiveExerciseSection();
   }
 
   function getNotaterSection() {
     return getSection("notater");
+  }
+
+  function getExerciseSections() {
+    if (!state.program) return [];
+    return (state.program.seksjoner || []).filter(
+      (seksjon) => seksjon.aktiv && seksjon.type !== "notater"
+    );
+  }
+
+  function getActiveExerciseSection() {
+    const phaseSections = getPhaseSections();
+    if (phaseSections.length > 0) {
+      const activePhaseId =
+        Number.isFinite(state.ui.activePhaseId) ? Number(state.ui.activePhaseId) : 0;
+      const active = phaseSections.find((phase) => phase.phaseId === activePhaseId);
+      if (active) {
+        state.ui.activePhaseId = active.phaseId;
+        return active.seksjon;
+      }
+      state.ui.activePhaseId = phaseSections[0].phaseId;
+      return phaseSections[0].seksjon;
+    }
+
+    const sections = getExerciseSections();
+    if (sections.length === 0) return null;
+    const activeId = state.ui.activeSectionId;
+    const active = sections.find((seksjon) => seksjon.seksjonId === activeId);
+    if (active) return active;
+    state.ui.activeSectionId = sections[0].seksjonId;
+    return sections[0];
+  }
+
+  function setActiveSection(seksjonId) {
+    if (!seksjonId) return;
+    const sections = getExerciseSections();
+    if (!sections.some((seksjon) => seksjon.seksjonId === seksjonId)) return;
+    state.ui.activeSectionId = seksjonId;
+    render.full();
+  }
+
+  function setActivePhase(phaseId) {
+    const next = Number(phaseId);
+    if (!Number.isFinite(next)) return;
+    const phases = getPhaseSections();
+    if (phases.length === 0) return;
+    if (!phases.some((phase) => phase.phaseId === next)) return;
+    state.ui.activePhaseId = next;
+    render.full();
+  }
+
+  function getExerciseContext(instansId) {
+    if (!state.program || !instansId) return null;
+    for (const seksjon of state.program.seksjoner || []) {
+      const index = (seksjon.ovelser || []).findIndex(
+        (ovelse) => ovelse.ovelseInstansId === instansId
+      );
+      if (index >= 0) {
+        return {
+          seksjon,
+          exercise: seksjon.ovelser[index],
+          exerciseIndex: index,
+        };
+      }
+    }
+    return null;
   }
 
   function getMasterById(id) {
@@ -96,9 +189,11 @@
   }
 
   function isInProgram(ovelseId) {
-    const hoveddel = getHoveddelSection();
-    if (!hoveddel) return false;
-    return hoveddel.ovelser.some((o) => o.ovelseId === ovelseId);
+    const sections = getExerciseSections();
+    if (sections.length === 0) return false;
+    return sections.some((seksjon) =>
+      (seksjon.ovelser || []).some((ovelse) => ovelse.ovelseId === ovelseId)
+    );
   }
 
   function normalize(value) {
@@ -133,7 +228,11 @@
   }
 
   function addExercise(master) {
-    const hoveddel = getHoveddelSection();
+    const hoveddel = getActiveExerciseSection();
+    if (!hoveddel) {
+      showToast("Fant ingen aktiv seksjon.");
+      return;
+    }
     if (isInProgram(master.ovelseId)) {
       showToast("Øvelsen finnes allerede i programmet.");
       return;
@@ -150,6 +249,8 @@
         sett: 3,
       },
       kommentar: "",
+      progressionInstructions: [],
+      progressionInstructionCriteriaIds: [],
       alternativer: [],
     };
 
@@ -160,8 +261,9 @@
   }
 
   function removeExercise(instansId) {
-    const hoveddel = getHoveddelSection();
-    hoveddel.ovelser = hoveddel.ovelser.filter(
+    const context = getExerciseContext(instansId);
+    if (!context) return;
+    context.seksjon.ovelser = context.seksjon.ovelser.filter(
       (o) => o.ovelseInstansId !== instansId
     );
     if (state.ui.librarySelection?.instansId === instansId) {
@@ -178,10 +280,10 @@
   }
 
   function moveExercise(instansId, direction) {
-    const hoveddel = getHoveddelSection();
-    const index = hoveddel.ovelser.findIndex(
-      (o) => o.ovelseInstansId === instansId
-    );
+    const context = getExerciseContext(instansId);
+    if (!context) return;
+    const hoveddel = context.seksjon;
+    const index = context.exerciseIndex;
     if (index < 0) return;
     const nextIndex = index + direction;
     if (nextIndex < 0 || nextIndex >= hoveddel.ovelser.length) return;
@@ -195,8 +297,8 @@
   }
 
   function updateDosering(instansId, field, value) {
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
     if (!instans) return;
     if (field === "reps" || field === "sett") {
       instans.dosering[field] = Number(value) || 0;
@@ -213,8 +315,8 @@
 
   function toggleAltSection(instansId, retning) {
     if (!retning) return;
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel?.ovelser?.find((o) => o.ovelseInstansId === instansId);
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
     if (!instans) return;
     if (
       state.ui.librarySelection &&
@@ -256,8 +358,8 @@
   }
 
   function removeAlt(instansId, altIndex) {
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
     if (!instans || !instans.alternativer || !instans.alternativer[altIndex]) return;
     instans.alternativer.splice(altIndex, 1);
     if (state.ui.altDetailsOpen[instansId]) {
@@ -312,10 +414,8 @@
       return;
     }
 
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel.ovelser.find(
-      (o) => o.ovelseInstansId === picker.instansId
-    );
+    const context = getExerciseContext(picker.instansId);
+    const instans = context?.exercise;
     if (!instans) return;
 
     const altCount = (instans.alternativer || []).filter(
@@ -381,8 +481,8 @@
   }
 
   function updateAltField(instansId, altIndex, field, value) {
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
     if (!instans || !instans.alternativer || !instans.alternativer[altIndex]) return;
     const alt = instans.alternativer[altIndex];
     alt.dosering = alt.dosering || { doseringstype: "reps_x_sett", reps: 0, sett: 0 };
@@ -536,6 +636,7 @@
   function startNewProgram() {
     resetUiState();
     state.program = createEmptyDraft();
+    getActiveExerciseSection();
     state.patientName = "";
     state.patientEmail = "";
     state.patientPhone = "";
@@ -642,6 +743,18 @@
     state.ui.startDetailsTemplateId = "";
     state.ui.patientDetailsOpen = false;
     state.ui.patientEmailError = "";
+    state.ui.activeSectionId = "";
+    state.ui.activePhaseId = null;
+    state.ui.progressionCriteriaOpen = null;
+    state.ui.rehabOverlay = {
+      isOpen: false,
+      step: 1,
+      search: "",
+      selectedTemplateId: "",
+      selectedSubtype: "",
+      selectedStatus: "",
+      focusSearch: false,
+    };
     state.ui.archiveEditId = null;
     state.ui.archiveEditName = "";
     state.ui.archiveEditEmail = "";
@@ -684,10 +797,8 @@
   function openExercisePreview(payload) {
     if (!payload || !payload.instansId) return;
     const altIndex = Number.isFinite(payload.altIndex) ? Number(payload.altIndex) : null;
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel?.ovelser?.find(
-      (o) => o.ovelseInstansId === payload.instansId
-    );
+    const context = getExerciseContext(payload.instansId);
+    const instans = context?.exercise;
     let commentText = "";
     if (instans) {
       if (Number.isFinite(altIndex)) {
@@ -718,17 +829,135 @@
   }
 
   function updateExerciseInstruction(instansId, value) {
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
     if (!instans) return;
     instans.utforelse = value || "";
     markUnsavedChanges();
     saveDraft(state.program);
   }
 
+  function normalizePhaseOrder(sections) {
+    const exerciseSections = sections.filter(
+      (seksjon) => seksjon.type !== "notater" && seksjon.aktiv
+    );
+    exerciseSections.forEach((seksjon, index) => {
+      seksjon.phaseId = index;
+      if (!String(seksjon.tittel || "").trim()) {
+        seksjon.tittel = `Fase ${index}`;
+      }
+      seksjon.rekkefolge = index + 1;
+    });
+    const notater = sections.find((seksjon) => seksjon.type === "notater");
+    if (notater) {
+      notater.rekkefolge = exerciseSections.length + 1;
+    }
+  }
+
+  function addPhase() {
+    if (!state.program) return;
+    const sections = state.program.seksjoner || [];
+    const exerciseSections = sections.filter(
+      (seksjon) => seksjon.aktiv && seksjon.type !== "notater"
+    );
+    if (exerciseSections.length === 0) {
+      const newSection = {
+        seksjonId: makeId("seksjon"),
+        type: "hovedovelser",
+        tittel: "Fase 0",
+        aktiv: true,
+        rekkefolge: 1,
+        phaseId: 0,
+        phaseGoal: "",
+        phaseFocusBullets: [],
+        phaseProgressionRule: "",
+        phaseClinicianNote: "",
+        ovelser: [],
+      };
+      const notater = sections.find((seksjon) => seksjon.type === "notater");
+      state.program.seksjoner = notater
+        ? [newSection, notater]
+        : [newSection];
+      state.ui.activePhaseId = 0;
+      markUnsavedChanges();
+      saveDraft(state.program);
+      render.full();
+      return;
+    }
+
+    exerciseSections.forEach((seksjon, index) => {
+      seksjon.phaseId = Number.isFinite(seksjon.phaseId)
+        ? seksjon.phaseId
+        : index;
+    });
+
+    const nextPhaseId =
+      exerciseSections.reduce(
+        (max, seksjon) =>
+          Math.max(max, Number.isFinite(seksjon.phaseId) ? seksjon.phaseId : -1),
+        -1
+      ) + 1;
+    const newSection = {
+      seksjonId: makeId("seksjon"),
+      type: "hovedovelser",
+      tittel: `Fase ${nextPhaseId}`,
+      aktiv: true,
+      rekkefolge: nextPhaseId + 1,
+      phaseId: nextPhaseId,
+      phaseGoal: "",
+      phaseFocusBullets: [],
+      phaseProgressionRule: "",
+      phaseClinicianNote: "",
+      ovelser: [],
+    };
+
+    const notaterIndex = sections.findIndex((seksjon) => seksjon.type === "notater");
+    if (notaterIndex >= 0) {
+      state.program.seksjoner = [
+        ...sections.slice(0, notaterIndex),
+        newSection,
+        ...sections.slice(notaterIndex),
+      ];
+    } else {
+      state.program.seksjoner = [...sections, newSection];
+    }
+    normalizePhaseOrder(state.program.seksjoner);
+    state.ui.activePhaseId = newSection.phaseId;
+    markUnsavedChanges();
+    saveDraft(state.program);
+    render.full();
+  }
+
+  function removePhase(seksjonId) {
+    if (!state.program) return;
+    const sections = state.program.seksjoner || [];
+    const exerciseSections = sections.filter(
+      (seksjon) => seksjon.aktiv && seksjon.type !== "notater"
+    );
+    if (exerciseSections.length <= 1) return;
+    state.program.seksjoner = sections.filter(
+      (seksjon) => seksjon.seksjonId !== seksjonId
+    );
+    normalizePhaseOrder(state.program.seksjoner);
+    const phases = getPhaseSections();
+    if (phases.length > 0) {
+      const stillExists = phases.some(
+        (phase) => phase.phaseId === state.ui.activePhaseId
+      );
+      if (!stillExists) {
+        state.ui.activePhaseId = phases[0].phaseId;
+      }
+    } else {
+      state.ui.activePhaseId = null;
+    }
+    markUnsavedChanges();
+    saveDraft(state.program);
+    render.full();
+  }
+
   function updateAltInstruction(instansId, altIndex, value) {
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
     if (!instans || !instans.alternativer || !instans.alternativer[altIndex]) return;
     instans.alternativer[altIndex].utforelse = value || "";
     markUnsavedChanges();
@@ -736,8 +965,8 @@
   }
 
   function updateExerciseComment(instansId, value) {
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
     if (!instans) return;
     instans.kommentar = value || "";
     markUnsavedChanges();
@@ -745,12 +974,137 @@
   }
 
   function updateAltComment(instansId, altIndex, value) {
-    const hoveddel = getHoveddelSection();
-    const instans = hoveddel.ovelser.find((o) => o.ovelseInstansId === instansId);
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
     if (!instans || !instans.alternativer || !instans.alternativer[altIndex]) return;
     instans.alternativer[altIndex].kommentar = value || "";
     markUnsavedChanges();
     saveDraft(state.program);
+  }
+
+  function updatePhaseField(seksjonId, field, value) {
+    if (!state.program) return;
+    const seksjon = state.program.seksjoner.find(
+      (item) => item.seksjonId === seksjonId
+    );
+    if (!seksjon) return;
+    if (
+      ![
+        "phaseGoal",
+        "phaseProgressionRule",
+        "phaseClinicianNote",
+      ].includes(field)
+    ) {
+      return;
+    }
+    seksjon[field] = value || "";
+    markUnsavedChanges();
+    saveDraft(state.program);
+  }
+
+  function updatePhaseTitle(seksjonId, value) {
+    if (!state.program) return;
+    const seksjon = state.program.seksjoner.find(
+      (item) => item.seksjonId === seksjonId
+    );
+    if (!seksjon) return;
+    seksjon.tittel = value || "";
+    markUnsavedChanges();
+    saveDraft(state.program);
+  }
+
+  function updatePhaseFocusBullet(seksjonId, index, value) {
+    if (!state.program) return;
+    const seksjon = state.program.seksjoner.find(
+      (item) => item.seksjonId === seksjonId
+    );
+    if (!seksjon) return;
+    const bullets = Array.isArray(seksjon.phaseFocusBullets)
+      ? [...seksjon.phaseFocusBullets]
+      : [];
+    while (bullets.length <= index) {
+      bullets.push("");
+    }
+    bullets[index] = value || "";
+    seksjon.phaseFocusBullets = bullets;
+    markUnsavedChanges();
+    saveDraft(state.program);
+  }
+
+  function addProgressionInstruction(instansId) {
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
+    if (!instans) return;
+    instans.progressionInstructions = Array.isArray(instans.progressionInstructions)
+      ? instans.progressionInstructions
+      : [];
+    instans.progressionInstructions.push("");
+    markUnsavedChanges();
+    saveDraft(state.program);
+    render.full();
+  }
+
+  function updateProgressionInstruction(instansId, index, value) {
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
+    if (!instans) return;
+    const list = Array.isArray(instans.progressionInstructions)
+      ? instans.progressionInstructions
+      : [];
+    if (!list[index] && list.length <= index) {
+      while (list.length <= index) list.push("");
+    }
+    list[index] = value || "";
+    instans.progressionInstructions = list;
+    markUnsavedChanges();
+    saveDraft(state.program);
+  }
+
+  function removeProgressionInstruction(instansId, index) {
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
+    if (!instans) return;
+    const list = Array.isArray(instans.progressionInstructions)
+      ? [...instans.progressionInstructions]
+      : [];
+    if (index < 0 || index >= list.length) return;
+    list.splice(index, 1);
+    instans.progressionInstructions = list;
+    markUnsavedChanges();
+    saveDraft(state.program);
+    render.full();
+  }
+
+  function toggleProgressionCriteriaDropdown(instansId) {
+    if (!instansId) return;
+    state.ui.progressionCriteriaOpen =
+      state.ui.progressionCriteriaOpen === instansId ? null : instansId;
+    render.full();
+  }
+
+  function closeProgressionCriteriaDropdown() {
+    if (!state.ui.progressionCriteriaOpen) return;
+    state.ui.progressionCriteriaOpen = null;
+    render.full();
+  }
+
+  function toggleProgressionCriteriaOption(instansId, value) {
+    const context = getExerciseContext(instansId);
+    const instans = context?.exercise;
+    if (!instans || !value) return;
+    const current = Array.isArray(instans.progressionInstructionCriteriaIds)
+      ? [...instans.progressionInstructionCriteriaIds]
+      : [];
+    const index = current.indexOf(value);
+    if (index >= 0) {
+      current.splice(index, 1);
+    } else {
+      current.push(value);
+    }
+    instans.progressionInstructionCriteriaIds = current;
+    markUnsavedChanges();
+    saveDraft(state.program);
+    render.full();
   }
 
   function openSendProgram() {
@@ -786,6 +1140,7 @@
   function createProgramFromStart(pasientNavn, pasientEpost) {
     resetUiState();
     state.program = createEmptyDraft();
+    getActiveExerciseSection();
     state.program.pasientNavn = (pasientNavn || "").trim();
     state.program.pasientEpost = (pasientEpost || "").trim();
     state.program.pasientTelefon = "";
@@ -796,6 +1151,186 @@
     state.patientDiagnosis = state.program.pasientDiagnose || "";
     setHasUnsavedChanges(false);
     state.ui.panelView = "builder";
+    saveDraft(state.program);
+    render.full();
+  }
+
+  function isProgramEmpty(program) {
+    if (!program) return true;
+    const sections = (program.seksjoner || []).filter(
+      (seksjon) => seksjon.aktiv && seksjon.type !== "notater"
+    );
+    return sections.every((seksjon) => (seksjon.ovelser || []).length === 0);
+  }
+
+  function openRehabTemplates() {
+    state.ui.rehabOverlay = {
+      isOpen: true,
+      step: 1,
+      search: "",
+      selectedTemplateId: "",
+      selectedSubtype: "",
+      selectedStatus: "",
+      focusSearch: true,
+    };
+    render.full();
+  }
+
+  function closeRehabTemplates() {
+    if (!state.ui.rehabOverlay) return;
+    state.ui.rehabOverlay.isOpen = false;
+    state.ui.rehabOverlay.step = 1;
+    state.ui.rehabOverlay.search = "";
+    state.ui.rehabOverlay.selectedTemplateId = "";
+    state.ui.rehabOverlay.selectedSubtype = "";
+    state.ui.rehabOverlay.selectedStatus = "";
+    state.ui.rehabOverlay.focusSearch = false;
+    render.full();
+  }
+
+  function setRehabSearch(value) {
+    if (!state.ui.rehabOverlay) return;
+    state.ui.rehabOverlay.search = value || "";
+    state.ui.rehabOverlay.focusSearch = true;
+    render.full();
+  }
+
+  function selectRehabTemplate(templateId) {
+    if (!state.ui.rehabOverlay) return;
+    state.ui.rehabOverlay.selectedTemplateId = templateId || "";
+    state.ui.rehabOverlay.selectedSubtype = "";
+    state.ui.rehabOverlay.selectedStatus = "";
+    state.ui.rehabOverlay.step = 2;
+    render.full();
+  }
+
+  function selectRehabSubtype(subtype) {
+    if (!state.ui.rehabOverlay) return;
+    state.ui.rehabOverlay.selectedSubtype = subtype || "";
+    state.ui.rehabOverlay.selectedStatus = "";
+    state.ui.rehabOverlay.step = 3;
+    render.full();
+  }
+
+  function selectRehabStatus(status) {
+    if (!state.ui.rehabOverlay) return;
+    state.ui.rehabOverlay.selectedStatus = status || "";
+    state.ui.rehabOverlay.step = 4;
+    render.full();
+  }
+
+  function rehabStepBack() {
+    if (!state.ui.rehabOverlay) return;
+    const step = Number(state.ui.rehabOverlay.step) || 1;
+    if (step <= 1) return;
+    if (step === 4) {
+      state.ui.rehabOverlay.selectedStatus = "";
+    } else if (step === 3) {
+      state.ui.rehabOverlay.selectedSubtype = "";
+      state.ui.rehabOverlay.selectedStatus = "";
+    } else if (step === 2) {
+      state.ui.rehabOverlay.selectedTemplateId = "";
+      state.ui.rehabOverlay.selectedSubtype = "";
+      state.ui.rehabOverlay.selectedStatus = "";
+    }
+    state.ui.rehabOverlay.step = step - 1;
+    state.ui.rehabOverlay.focusSearch = true;
+    render.full();
+  }
+
+  function applyRehabTemplate() {
+    const overlay = state.ui.rehabOverlay;
+    if (!overlay) return;
+    const templates = Array.isArray(state.rehabTemplates) ? state.rehabTemplates : [];
+    const template = templates.find((item) => item.id === overlay.selectedTemplateId);
+    const variant = template?.variants?.[overlay.selectedSubtype];
+    const statusEntry = variant?.statuses?.[overlay.selectedStatus];
+    const payload = statusEntry?.programPayload;
+    if (!template || !variant || !payload) {
+      showToast("Fant ikke valgt rehab-mal.");
+      return;
+    }
+
+    if (!isProgramEmpty(state.program)) {
+      const confirmed = window.confirm(
+        "Dette vil erstatte eksisterende program. Fortsette?"
+      );
+      if (!confirmed) return;
+    }
+
+    const draft = createEmptyDraft();
+    draft.tittel = payload.title || draft.tittel;
+    draft.meta = payload.meta || {
+      rehabTemplate: true,
+      rehabTemplateId: template.id,
+      rehabSubtype: overlay.selectedSubtype,
+      rehabStatus: overlay.selectedStatus,
+    };
+
+    const phaseSections = (payload.sections || []).map((section, index) => ({
+      seksjonId: makeId("seksjon"),
+      type: "hovedovelser",
+      tittel: section.title || `Fase ${index}`,
+      aktiv: true,
+      rekkefolge: index + 1,
+      phaseId: index,
+      phaseGoal: section.phaseGoal || "",
+      phaseFocusBullets: Array.isArray(section.phaseFocusBullets)
+        ? [...section.phaseFocusBullets]
+        : [],
+      phaseProgressionRule: section.phaseProgressionRule || "",
+      phaseClinicianNote: section.phaseClinicianNote || "",
+      ovelser: (section.exercises || []).map((exercise) => ({
+        ovelseInstansId: makeId("instans"),
+        ovelseId: exercise.exerciseId || makeId("rehab-ovelse"),
+        navn: exercise.name || "Øvelse",
+        utforelse: exercise.execution || "",
+        dosering: {
+          doseringstype: "reps_x_sett",
+          reps: Number(exercise.dosage?.reps) || 0,
+          sett: Number(exercise.dosage?.sett) || 0,
+          belastningKg: Number(exercise.dosage?.belastningKg) || 0,
+          varighetSek: Number(exercise.dosage?.varighetSek) || 0,
+        },
+        kommentar: "",
+        progressionInstructions: Array.isArray(exercise.progressionInstructions)
+          ? [...exercise.progressionInstructions]
+          : [],
+        progressionInstructionCriteriaIds: Array.isArray(
+          exercise.progressionInstructionCriteriaIds
+        )
+          ? [...exercise.progressionInstructionCriteriaIds]
+          : [],
+        alternativer: [],
+      })),
+    }));
+
+    const notater = draft.seksjoner.find((seksjon) => seksjon.type === "notater");
+    if (notater) {
+      notater.rekkefolge = phaseSections.length + 1;
+    }
+    draft.seksjoner = [...phaseSections, ...(notater ? [notater] : [])];
+
+    const existingName = state.program?.pasientNavn || state.patientName || "";
+    const existingEmail = state.program?.pasientEpost || state.patientEmail || "";
+    const existingPhone = state.program?.pasientTelefon || state.patientPhone || "";
+    const existingDiagnosis =
+      state.program?.pasientDiagnose || state.patientDiagnosis || "";
+
+    resetUiState();
+    state.program = draft;
+    getActiveExerciseSection();
+    state.ui.activePhaseId = 0;
+    state.program.pasientNavn = existingName;
+    state.program.pasientEpost = existingEmail;
+    state.program.pasientTelefon = existingPhone;
+    state.program.pasientDiagnose = existingDiagnosis;
+    state.patientName = existingName || "";
+    state.patientEmail = existingEmail || "";
+    state.patientPhone = existingPhone || "";
+    state.patientDiagnosis = existingDiagnosis || "";
+    state.ui.panelView = "builder";
+    setHasUnsavedChanges(false);
     saveDraft(state.program);
     render.full();
   }
@@ -930,6 +1465,7 @@
     const pendingEmail = patientInfo.email || state.ui.startDetailsEmail || "";
     resetUiState();
     state.program = draft;
+    getActiveExerciseSection();
     if (pendingName || pendingEmail) {
       state.program.pasientNavn = pendingName.trim();
       state.program.pasientEpost = pendingEmail.trim();
@@ -977,6 +1513,10 @@
       }
 
       state.program = content;
+      getActiveExerciseSection();
+      if (state.program?.meta?.rehabTemplate) {
+        state.ui.activePhaseId = 0;
+      }
       state.program.archiveId = entry.id || null;
       state.program.pasientNavn = entry.patientName || state.program.pasientNavn || "";
       state.program.pasientEpost = entry.email || state.program.pasientEpost || "";
@@ -1000,6 +1540,9 @@
     getSection,
     getHoveddelSection,
     getNotaterSection,
+    getPhaseSections,
+    getExerciseSections,
+    getExerciseContext,
     getMasterById,
     isInProgram,
     normalize,
@@ -1035,6 +1578,16 @@
     startNewProgram,
     loadProgram,
     createProgramFromStart,
+    openRehabTemplates,
+    closeRehabTemplates,
+    setRehabSearch,
+    selectRehabTemplate,
+    selectRehabSubtype,
+    selectRehabStatus,
+    rehabStepBack,
+    applyRehabTemplate,
+    setActivePhase,
+    setActiveSection,
     openArchivedProgram,
     openTemplates,
     closeTemplates,
@@ -1065,5 +1618,16 @@
     updateAltInstruction,
     updateExerciseComment,
     updateAltComment,
+    updatePhaseField,
+    updatePhaseTitle,
+    updatePhaseFocusBullet,
+    addPhase,
+    removePhase,
+    addProgressionInstruction,
+    updateProgressionInstruction,
+    removeProgressionInstruction,
+    toggleProgressionCriteriaDropdown,
+    closeProgressionCriteriaDropdown,
+    toggleProgressionCriteriaOption,
   };
 }

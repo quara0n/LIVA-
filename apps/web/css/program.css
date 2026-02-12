@@ -132,6 +132,152 @@
   font-size: 16px;
 }
 
+.section-title-btn {
+  border: none;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+.rehab-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--accent-2);
+  padding: 4px 10px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+
+.phase-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.phase-switcher-label {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.phase-switcher-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn.is-active {
+  border-color: var(--accent-2);
+  color: var(--accent-2);
+}
+
+.phase-header {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  background: #faf7f2;
+  margin-bottom: 12px;
+}
+
+.phase-header-row {
+  display: grid;
+  gap: 8px;
+}
+
+.phase-header-row label {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.phase-header-bullets {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.phase-header-note textarea {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.exercise-progression {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px dashed var(--border);
+  background: #fafafa;
+}
+
+.exercise-progression-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+}
+
+.exercise-progression-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+}
+
+.exercise-progression-criteria {
+  position: relative;
+  display: grid;
+  gap: 6px;
+}
+
+.exercise-progression-menu {
+  position: absolute;
+  top: 42px;
+  left: 0;
+  min-width: 220px;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: var(--shadow);
+  display: grid;
+  gap: 6px;
+  z-index: 5;
+}
+
+.exercise-progression-item {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 8px;
+  align-items: center;
+  text-align: left;
+  border: none;
+  background: transparent;
+  padding: 4px;
+  cursor: pointer;
+}
+
 .section-body {
   display: grid;
   gap: 12px;
@@ -739,6 +885,91 @@
 .exercise-preview-other {
   display: grid;
   gap: 8px;
+}
+
+.rehab-overlay-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(28, 28, 28, 0.35);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  z-index: 60;
+}
+
+.rehab-overlay {
+  width: min(980px, 100%);
+  max-height: min(88vh, 720px);
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  padding: 20px;
+  display: grid;
+  gap: 16px;
+}
+
+.rehab-overlay-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.rehab-overlay-header h3 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.rehab-steps {
+  display: grid;
+  gap: 16px;
+}
+
+.rehab-step {
+  display: grid;
+  gap: 10px;
+}
+
+.rehab-step-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.rehab-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.rehab-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+  padding: 12px;
+  text-align: left;
+  display: grid;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.rehab-card.is-selected {
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 2px rgba(31, 111, 235, 0.15);
+}
+
+.rehab-summary {
+  display: grid;
+  gap: 6px;
+  font-size: 14px;
+}
+
+.rehab-overlay-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
 }
 
 .exercise-preview-other-header {

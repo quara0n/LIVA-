@@ -69,9 +69,15 @@
     `;
   }
 
-  function renderProgramItems() {
-    const hoveddel = helpers.getHoveddelSection();
-    if (!hoveddel) return "";
+  const PROGRESSION_CRITERIA_OPTIONS = [
+    "Når smerte og funksjon er akseptabel",
+    "Når øvelsen kjennes lett og kontrollert",
+    "Ved økt smerte eller redusert kontroll",
+    "Ved behov for enklere variant",
+  ];
+
+  function renderProgramItems(seksjon) {
+    if (!seksjon) return "";
     const getVideoForExercise = (ovelseId) => {
       const manifest = state.ui.videoManifest;
       if (Array.isArray(manifest)) {
@@ -159,7 +165,7 @@
       return custom ? [...presetItems, custom] : presetItems;
     };
 
-    const groups = hoveddel.ovelser
+    const groups = (seksjon.ovelser || [])
       .map((instans, index) => {
         const master = helpers.getMasterById(instans.ovelseId);
         const emoji = master?.emoji || "🏃";
@@ -180,7 +186,22 @@
         const regresjonEntries = altEntries.filter(
           (entry) => entry.alt.retning === "regresjon"
         );
+        const progressionInstructions = Array.isArray(instans.progressionInstructions)
+          ? instans.progressionInstructions
+          : [];
+        const progressionCriteria = Array.isArray(
+          instans.progressionInstructionCriteriaIds
+        )
+          ? instans.progressionInstructionCriteriaIds
+          : [];
+        const criteriaOpen =
+          state.ui.progressionCriteriaOpen === instans.ovelseInstansId;
+        const criteriaLabel =
+          progressionCriteria.length > 0
+            ? `${progressionCriteria.length} valgt`
+            : "Velg kriterier";
 
+        const showProgressionInstructions = Boolean(state.program?.meta?.rehabTemplate);
         const renderSelectedAltCard = ({ alt, altIndex }) => {
           const altDetailsOpen =
             state.ui.altDetailsOpen?.[instans.ovelseInstansId]?.[altIndex] || false;
@@ -279,6 +300,56 @@
                     tidValue: instans.dosering.varighetSek || 0,
                   })}
                 </div>
+                ${
+                  showProgressionInstructions
+                    ? `<div class="exercise-progression">
+                  <div class="exercise-progression-header">
+                    <strong>Progresjon i samme øvelse</strong>
+                    <button class="action-btn" data-action="add-progression-instruction" data-instans-id="${instans.ovelseInstansId}">Legg til</button>
+                  </div>
+                  ${
+                    progressionInstructions.length > 0
+                      ? progressionInstructions
+                          .map(
+                            (item, instructionIndex) => `
+                      <div class="exercise-progression-row">
+                        <input
+                          class="inline-input"
+                          data-action="edit-progression-instruction"
+                          data-instans-id="${instans.ovelseInstansId}"
+                          data-index="${instructionIndex}"
+                          type="text"
+                          placeholder="Kort instruksjon"
+                          value="${item || ""}"
+                        />
+                        <button class="action-btn" data-action="remove-progression-instruction" data-instans-id="${instans.ovelseInstansId}" data-index="${instructionIndex}">Fjern</button>
+                      </div>
+                    `
+                          )
+                          .join("")
+                      : `<p class="hint">Ingen progresjonsinstrukser lagt til.</p>`
+                  }
+                  <div class="exercise-progression-criteria" data-role="progression-criteria">
+                    <button class="select" data-action="toggle-progression-criteria" data-instans-id="${instans.ovelseInstansId}" aria-expanded="${criteriaOpen ? "true" : "false"}">${criteriaLabel}</button>
+                    ${
+                      criteriaOpen
+                        ? `<div class="exercise-progression-menu">
+                            ${PROGRESSION_CRITERIA_OPTIONS.map((option) => {
+                              const checked = progressionCriteria.includes(option);
+                              return `
+                                <button class="exercise-progression-item" data-action="toggle-progression-criteria-option" data-instans-id="${instans.ovelseInstansId}" data-value="${option}" aria-pressed="${checked ? "true" : "false"}">
+                                  <input type="checkbox" tabindex="-1" ${checked ? "checked" : ""} />
+                                  <span>${option}</span>
+                                </button>
+                              `;
+                            }).join("")}
+                          </div>`
+                        : ""
+                    }
+                  </div>
+                </div>`
+                    : ""
+                }
                 <div class="inline-actions">
                   <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon">+ Progresjon</button>
                   <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon">− Regresjon</button>
@@ -293,7 +364,7 @@
 
     if (groups.length === 0) return '<p class="hint">Ingen øvelser lagt til ennå.</p>';
 
-    const totalExerciseCount = hoveddel.ovelser.reduce(
+    const totalExerciseCount = (seksjon.ovelser || []).reduce(
       (sum, instans) => sum + 1 + (instans.alternativer?.length || 0),
       0
     );
@@ -302,7 +373,7 @@
       return groups.join("");
     }
 
-    const splitIndex = Math.ceil(hoveddel.ovelser.length / 2);
+    const splitIndex = Math.ceil((seksjon.ovelser || []).length / 2);
     const col1 = groups.slice(0, splitIndex).join("");
     const col2 = groups.slice(splitIndex).join("");
     return `
@@ -325,9 +396,10 @@
     const filtered = state.library.filter((item) => helpers.matchesSearch(item, query));
     let suggestedIds = [];
     if (selection) {
-      const primary = state.program?.seksjoner
-        ?.find((s) => s.type === "hovedovelser")
-        ?.ovelser?.find((o) => o.ovelseInstansId === selection.instansId);
+      const primaryContext = helpers.getExerciseContext
+        ? helpers.getExerciseContext(selection.instansId)
+        : null;
+      const primary = primaryContext?.exercise;
       const primaryMaster = primary ? helpers.getMasterById(primary.ovelseId) : null;
       const source =
         selection.retning === "progresjon"
@@ -369,10 +441,9 @@
       const headingPrefix = options.prefix || "";
       const existingCount = isSelectionMode
         ? (
-            state.program?.seksjoner
-              ?.find((s) => s.type === "hovedovelser")
-              ?.ovelser?.find((o) => o.ovelseInstansId === selection.instansId)
-              ?.alternativer || []
+            (helpers.getExerciseContext
+              ? helpers.getExerciseContext(selection.instansId)?.exercise
+              : null)?.alternativer || []
           ).filter((alt) => alt.retning === selection.retning).length
         : 0;
       const addAsAltDisabled = existingCount >= 3;
@@ -426,8 +497,13 @@
           .map((item) => renderLibraryCard(item, { prefix: "Forslag: " }))
           .join("")
       : "";
+    const suggestedIdSet = new Set(suggestedIds);
+    const listItems =
+      isSelectionMode && suggestedIds.length
+        ? filtered.filter((item) => !suggestedIdSet.has(item.ovelseId))
+        : filtered;
 
-    const allCards = filtered
+    const allCards = listItems
       .map((item) => {
         return renderLibraryCard(item);
       })
@@ -482,10 +558,10 @@
   function renderExercisePreviewModal() {
     const preview = state.ui.exercisePreview || { isOpen: false };
     if (!preview.isOpen) return "";
-    const hoveddel = helpers.getHoveddelSection();
-    const instans = hoveddel?.ovelser?.find(
-      (o) => o.ovelseInstansId === preview.instansId
-    );
+    const context = helpers.getExerciseContext
+      ? helpers.getExerciseContext(preview.instansId)
+      : null;
+    const instans = context?.exercise;
     if (!instans) return "";
 
     let ovelseId = instans.ovelseId;
@@ -672,7 +748,6 @@
         <div class="startstate-card">
           <div class="start-actions">
             <div class="start-actions-row">
-              <button class="action-btn" data-action="open-start-details" data-mode="template">Start fra mal</button>
               <button class="action-btn" data-action="load-program">Hent program</button>
             </div>
             <button class="primary" data-action="open-start-details" data-mode="new">Nytt program</button>
@@ -832,8 +907,8 @@
   }
 
   function renderSendProgramSection() {
-    const hoveddel = helpers.getHoveddelSection();
-    const hasExercises = Boolean(hoveddel && hoveddel.ovelser.length > 0);
+    const sections = helpers.getExerciseSections ? helpers.getExerciseSections() : [];
+    const hasExercises = sections.some((seksjon) => (seksjon.ovelser || []).length > 0);
     const disabledAttr = hasExercises ? "" : "disabled";
     const disabledTitle = hasExercises
       ? ""
@@ -897,7 +972,272 @@
     `;
   }
 
+  function renderPhaseHeader(seksjon) {
+    if (!seksjon) return "";
+    const focusBullets = Array.isArray(seksjon.phaseFocusBullets)
+      ? seksjon.phaseFocusBullets
+      : [];
+    return `
+      <div class="phase-header">
+        <div class="phase-header-row">
+          <label>
+            <span>Fasenavn</span>
+            <input
+              class="inline-input"
+              type="text"
+              data-action="edit-phase-title"
+              data-section-id="${seksjon.seksjonId}"
+              value="${seksjon.tittel || ""}"
+              placeholder="Fase-navn"
+            />
+          </label>
+          <label>
+            <span>Mål</span>
+            <input
+              class="inline-input"
+              type="text"
+              data-action="edit-phase-goal"
+              data-section-id="${seksjon.seksjonId}"
+              value="${seksjon.phaseGoal || ""}"
+              placeholder="Kort mål for fasen"
+            />
+          </label>
+        </div>
+        <div class="phase-header-row">
+          <div class="phase-header-bullets">
+            <span>Prinsipp/fokus</span>
+            ${[0, 1, 2]
+              .map(
+                (index) => `
+              <input
+                class="inline-input"
+                type="text"
+                data-action="edit-phase-focus"
+                data-section-id="${seksjon.seksjonId}"
+                data-index="${index}"
+                value="${focusBullets[index] || ""}"
+                placeholder="Fokuspunkt"
+              />
+            `
+              )
+              .join("")}
+          </div>
+        </div>
+        <div class="phase-header-row">
+          <label>
+            <span>Standard progresjonsregel</span>
+            <input
+              class="inline-input"
+              type="text"
+              data-action="edit-phase-progression"
+              data-section-id="${seksjon.seksjonId}"
+              value="${seksjon.phaseProgressionRule || ""}"
+              placeholder="F.eks. 24t-respons"
+            />
+          </label>
+        </div>
+        <div class="phase-header-row">
+          <label class="phase-header-note">
+            <span>Klinikernotat</span>
+            <textarea
+              rows="2"
+              data-action="edit-phase-clinician"
+              data-section-id="${seksjon.seksjonId}"
+              placeholder="Valgfritt notat"
+            >${seksjon.phaseClinicianNote || ""}</textarea>
+          </label>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderRehabTemplatesOverlay() {
+    const overlay = state.ui.rehabOverlay;
+    if (!overlay || !overlay.isOpen) return "";
+
+    const templates = Array.isArray(state.rehabTemplates) ? state.rehabTemplates : [];
+    const query = helpers.normalize(overlay.search);
+    const filteredTemplates = templates.filter((template) => {
+      if (!query) return true;
+      const haystack = [template.name, template.id].map(helpers.normalize).join(" ");
+      return haystack.includes(query);
+    });
+    const activeTemplate = templates.find(
+      (template) => template.id === overlay.selectedTemplateId
+    );
+    const step = Math.min(4, Math.max(1, Number(overlay.step) || 1));
+
+    const templateCards = filteredTemplates
+      .map((template) => {
+        const isSelected = template.id === overlay.selectedTemplateId;
+        return `
+          <button class="rehab-card ${isSelected ? "is-selected" : ""}" data-action="select-rehab-template" data-template-id="${template.id}" aria-pressed="${isSelected ? "true" : "false"}">
+            <strong>${template.name}</strong>
+            <span class="hint">Systemmal</span>
+          </button>
+        `;
+      })
+      .join("");
+
+    const subtypeOptions = activeTemplate
+      ? Object.entries(activeTemplate.variants || {})
+      : [];
+    const subtypeCards = subtypeOptions
+      .map(([key, value]) => {
+        const isSelected = key === overlay.selectedSubtype;
+        return `
+          <button class="rehab-card ${isSelected ? "is-selected" : ""}" data-action="select-rehab-subtype" data-subtype="${key}" aria-pressed="${isSelected ? "true" : "false"}">
+            <strong>${value.label || key}</strong>
+          </button>
+        `;
+      })
+      .join("");
+
+    const statusOptions =
+      activeTemplate?.variants?.[overlay.selectedSubtype]?.statuses || {};
+    const statusCards = Object.entries(statusOptions)
+      .map(([key, value]) => {
+        const isSelected = key === overlay.selectedStatus;
+        return `
+          <button class="rehab-card ${isSelected ? "is-selected" : ""}" data-action="select-rehab-status" data-status="${key}" aria-pressed="${isSelected ? "true" : "false"}">
+            <strong>${value.label || key}</strong>
+          </button>
+        `;
+      })
+      .join("");
+
+    const summaryTemplate = activeTemplate?.name || "";
+    const summarySubtype =
+      activeTemplate?.variants?.[overlay.selectedSubtype]?.label || "";
+    const summaryStatus =
+      statusOptions?.[overlay.selectedStatus]?.label || "";
+
+    return `
+      <div class="rehab-overlay-backdrop">
+        <div class="rehab-overlay" role="dialog" aria-modal="true" aria-label="Rehab-maler">
+          <div class="rehab-overlay-header">
+            <div>
+              <h3>Rehab-maler</h3>
+              <p class="hint">Velg mal og variant.</p>
+            </div>
+            <button class="action-btn" data-action="close-rehab-templates">X</button>
+          </div>
+
+          <input
+            type="search"
+            data-action="rehab-search"
+            placeholder="Søk rehab-mal..."
+            value="${overlay.search || ""}"
+          />
+
+          <div class="rehab-steps">
+            ${
+              step === 1
+                ? `
+              <div class="rehab-step">
+                <div class="rehab-step-title">Steg 1: Velg mal</div>
+                <div class="rehab-card-grid">
+                  ${templateCards || '<p class="hint">Ingen treff.</p>'}
+                </div>
+              </div>
+            `
+                : ""
+            }
+            ${
+              step === 2
+                ? `
+              <div class="rehab-step">
+                <div class="rehab-step-title">Steg 2: Velg subtype</div>
+                <div class="rehab-card-grid">
+                  ${subtypeCards || '<p class="hint">Velg en mal først.</p>'}
+                </div>
+              </div>
+            `
+                : ""
+            }
+            ${
+              step === 3
+                ? `
+              <div class="rehab-step">
+                <div class="rehab-step-title">Steg 3: Velg status</div>
+                <div class="rehab-card-grid">
+                  ${statusCards || '<p class="hint">Velg subtype først.</p>'}
+                </div>
+              </div>
+            `
+                : ""
+            }
+            ${
+              step === 4
+                ? `
+              <div class="rehab-step">
+                <div class="rehab-step-title">Steg 4: Bruk mal</div>
+                <div class="rehab-summary">
+                  <div><strong>Mal:</strong> ${summaryTemplate}</div>
+                  <div><strong>Subtype:</strong> ${summarySubtype}</div>
+                  <div><strong>Status:</strong> ${summaryStatus}</div>
+                </div>
+              </div>
+            `
+                : ""
+            }
+          </div>
+
+          <div class="rehab-overlay-actions">
+            ${step > 1 ? `<button class="action-btn" data-action="rehab-step-back">Tilbake</button>` : ""}
+            ${step === 4 ? `<button class="primary" data-action="apply-rehab-template">Bruk mal</button>` : ""}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
   function renderBuilder() {
+    const phaseSections = helpers.getPhaseSections ? helpers.getPhaseSections() : [];
+    const exerciseSections = helpers.getExerciseSections
+      ? helpers.getExerciseSections()
+      : [];
+    const activeSection = helpers.getHoveddelSection
+      ? helpers.getHoveddelSection()
+      : null;
+    const activeSectionId =
+      activeSection?.seksjonId || state.ui.activeSectionId || "";
+    const activePhaseId =
+      Number.isFinite(state.ui.activePhaseId) ? state.ui.activePhaseId : 0;
+    const showPhaseSwitcher = phaseSections.length > 0;
+    const activePhase =
+      phaseSections.find((phase) => phase.phaseId === activePhaseId) ||
+      phaseSections[0] ||
+      null;
+    const activePhaseLabel = activePhase?.seksjon?.tittel || `Fase ${activePhaseId}`;
+    const sectionsToRender = showPhaseSwitcher
+      ? phaseSections.filter((phase) => phase.phaseId === activePhaseId)
+      : exerciseSections.map((seksjon) => ({ seksjon }));
+    const sectionBlocks = sectionsToRender
+      .map((entry) => {
+        const seksjon = entry.seksjon || entry;
+        const isActive = showPhaseSwitcher
+          ? false
+          : seksjon.seksjonId === activeSectionId;
+        return `
+        <div class="section rehab-section" data-section-id="${seksjon.seksjonId}">
+          <div class="section-title">
+            <button class="section-title-btn" data-action="set-active-section" data-section-id="${seksjon.seksjonId}">
+              <span>${seksjon.tittel || "Seksjon"}</span>
+              ${isActive ? `<span class="tag">Aktiv</span>` : ""}
+            </button>
+          </div>
+          ${showPhaseSwitcher ? renderPhaseHeader(seksjon) : ""}
+          <div class="section-body exercise-list">
+            ${renderProgramItems(seksjon)}
+          </div>
+        </div>
+      `;
+      })
+      .join("");
+    const rehabActive = Boolean(state.program?.meta?.rehabTemplate);
+    const rehabLabel = state.program?.meta?.rehabLabel || "Rehab-mal aktiv";
+
     return `
       <div class="program-canvas">
         <div class="panel-header program-header">
@@ -908,18 +1248,42 @@
               type="text"
               placeholder="Navn"
             />
+            ${rehabActive ? `<span class="rehab-badge">${rehabLabel}</span>` : ""}
             <button class="action-btn" data-action="save-program">Lagre</button>
             <button class="action-btn" data-action="start-new-program">Nytt program</button>
-            <button class="action-btn" data-action="start-template">Start fra mal</button>
             <button class="action-btn" data-action="load-program">Hent program</button>
           </div>
         </div>
 
-        <div class="section" id="section-hoveddel">
-          <div class="section-body exercise-list" id="hoveddel-list">
-            ${renderProgramItems()}
+        ${
+          showPhaseSwitcher
+            ? `
+        <div class="phase-switcher">
+          <div class="phase-switcher-label">Aktiv: ${activePhaseLabel}</div>
+          <div class="phase-switcher-actions">
+            ${phaseSections
+              .map(
+                (phase) => `
+              <button class="action-btn ${phase.phaseId === activePhaseId ? "is-active" : ""}" data-action="set-active-phase" data-phase-id="${phase.phaseId}">
+                ${phase.seksjon?.tittel || `Fase ${phase.phaseId}`}
+              </button>
+            `
+              )
+              .join("")}
+          </div>
+          <div class="phase-switcher-actions">
+            <button class="action-btn" data-action="add-phase">+ Ny fase</button>
+            ${
+              activePhase?.seksjon
+                ? `<button class="action-btn" data-action="remove-phase" data-section-id="${activePhase.seksjon.seksjonId}">Fjern fase</button>`
+                : ""
+            }
           </div>
         </div>
+        `
+            : ""
+        }
+        ${sectionBlocks}
 
         <div class="section" id="section-notater">
           <div class="section-body">
@@ -940,18 +1304,20 @@
     const panelView = state.ui.panelView || "start";
     const hasDraft = Boolean(state.program);
     const isBuilder = panelView === "builder" && hasDraft;
+    const rehabOverlay = renderRehabTemplatesOverlay();
+    const shouldFocusRehabSearch = Boolean(state.ui.rehabOverlay?.focusSearch);
 
     if (programRootEl) {
       if (panelView === "load") {
-        programRootEl.innerHTML = `${renderArchiveList()}${renderVideoPreviewModal()}`;
+        programRootEl.innerHTML = `${renderArchiveList()}${renderVideoPreviewModal()}${rehabOverlay}`;
       } else if (panelView === "templates") {
-        programRootEl.innerHTML = `${renderTemplatesList()}${renderVideoPreviewModal()}`;
+        programRootEl.innerHTML = `${renderTemplatesList()}${renderVideoPreviewModal()}${rehabOverlay}`;
       } else if (panelView === "start-details") {
-        programRootEl.innerHTML = `${renderStartDetails()}${renderVideoPreviewModal()}`;
+        programRootEl.innerHTML = `${renderStartDetails()}${renderVideoPreviewModal()}${rehabOverlay}`;
       } else if (isBuilder) {
-        programRootEl.innerHTML = `${renderBuilder()}${renderExercisePreviewModal()}${renderVideoPreviewModal()}`;
+        programRootEl.innerHTML = `${renderBuilder()}${renderExercisePreviewModal()}${renderVideoPreviewModal()}${rehabOverlay}`;
       } else {
-        programRootEl.innerHTML = `${renderStartState()}${renderVideoPreviewModal()}`;
+        programRootEl.innerHTML = `${renderStartState()}${renderVideoPreviewModal()}${rehabOverlay}`;
       }
     }
 
@@ -983,15 +1349,15 @@
       }
     }
 
-    const hoveddel = helpers.getHoveddelSection();
+    const sections = helpers.getExerciseSections ? helpers.getExerciseSections() : [];
+    const hasExercises = sections.some((seksjon) => (seksjon.ovelser || []).length > 0);
     const manglerUtforelse = isBuilder
       ? helpers.finnOvelserUtenUtforelse(state.program)
       : [];
     if (els.exportBtn) {
       els.exportBtn.disabled =
         !isBuilder ||
-        !hoveddel ||
-        hoveddel.ovelser.length === 0 ||
+        !hasExercises ||
         manglerUtforelse.length > 0;
     }
 
@@ -1010,6 +1376,23 @@
         nameInput.value = state.program?.pasientNavn || "";
       }
     }
+
+    if (shouldFocusRehabSearch && programRootEl) {
+      const rehabInput = programRootEl.querySelector("[data-action='rehab-search']");
+      if (rehabInput) {
+        const value = rehabInput.value || "";
+        rehabInput.focus({ preventScroll: true });
+        try {
+          rehabInput.setSelectionRange(value.length, value.length);
+        } catch (_error) {
+          // ignore selection errors
+        }
+      }
+      if (state.ui.rehabOverlay) {
+        state.ui.rehabOverlay.focusSearch = false;
+      }
+    }
+
     renderLibrary();
     if (state.ui.librarySelection?.focusPending && els.libraryPanelEl) {
       state.ui.librarySelection.focusPending = false;

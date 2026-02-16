@@ -91,6 +91,10 @@
     return value;
   }
 
+  function isRehabTemplateProgram() {
+    return Boolean(state.program?.meta?.rehabTemplate);
+  }
+
   function getPhaseSections() {
     if (!state.program) return [];
     const baseSections = (state.program.seksjoner || []).filter(
@@ -100,7 +104,7 @@
       baseSections.some((seksjon) => Number.isFinite(seksjon.phaseId)) ||
       baseSections.some((seksjon) => parsePhaseId(seksjon.tittel) !== null);
     if (!hasPhase) return [];
-    return baseSections
+    const phaseSections = baseSections
       .map((seksjon) => {
         const phaseId = Number.isFinite(seksjon.phaseId)
           ? Number(seksjon.phaseId)
@@ -109,6 +113,8 @@
       })
       .filter(Boolean)
       .sort((a, b) => a.phaseId - b.phaseId);
+    if (!isRehabTemplateProgram()) return phaseSections;
+    return phaseSections.filter((phase) => phase.phaseId >= 1 && phase.phaseId <= 3);
   }
 
   function getHoveddelSection() {
@@ -130,7 +136,9 @@
     const phaseSections = getPhaseSections();
     if (phaseSections.length > 0) {
       const activePhaseId =
-        Number.isFinite(state.ui.activePhaseId) ? Number(state.ui.activePhaseId) : 0;
+        Number.isFinite(state.ui.activePhaseId)
+          ? Number(state.ui.activePhaseId)
+          : phaseSections[0].phaseId;
       const active = phaseSections.find((phase) => phase.phaseId === activePhaseId);
       if (active) {
         state.ui.activePhaseId = active.phaseId;
@@ -856,6 +864,7 @@
 
   function addPhase() {
     if (!state.program) return;
+    if (isRehabTemplateProgram()) return;
     const sections = state.program.seksjoner || [];
     const exerciseSections = sections.filter(
       (seksjon) => seksjon.aktiv && seksjon.type !== "notater"
@@ -930,6 +939,7 @@
 
   function removePhase(seksjonId) {
     if (!state.program) return;
+    if (isRehabTemplateProgram()) return;
     const sections = state.program.seksjoner || [];
     const exerciseSections = sections.filter(
       (seksjon) => seksjon.aktiv && seksjon.type !== "notater"
@@ -1267,13 +1277,16 @@
       rehabStatus: overlay.selectedStatus,
     };
 
-    const phaseSections = (payload.sections || []).map((section, index) => ({
+    const phaseSections = (payload.sections || []).map((section, index) => {
+      const titlePhaseId = parsePhaseId(section.title);
+      const phaseId = Number.isFinite(titlePhaseId) ? titlePhaseId : index + 1;
+      return {
       seksjonId: makeId("seksjon"),
       type: "hovedovelser",
-      tittel: section.title || `Fase ${index}`,
+      tittel: section.title || `Fase ${phaseId}`,
       aktiv: true,
       rekkefolge: index + 1,
-      phaseId: index,
+      phaseId,
       phaseGoal: section.phaseGoal || "",
       phaseFocusBullets: Array.isArray(section.phaseFocusBullets)
         ? [...section.phaseFocusBullets]
@@ -1303,7 +1316,8 @@
           : [],
         alternativer: [],
       })),
-    }));
+    };
+    });
 
     const notater = draft.seksjoner.find((seksjon) => seksjon.type === "notater");
     if (notater) {
@@ -1320,7 +1334,7 @@
     resetUiState();
     state.program = draft;
     getActiveExerciseSection();
-    state.ui.activePhaseId = 0;
+    state.ui.activePhaseId = 1;
     state.program.pasientNavn = existingName;
     state.program.pasientEpost = existingEmail;
     state.program.pasientTelefon = existingPhone;
@@ -1515,7 +1529,7 @@
       state.program = content;
       getActiveExerciseSection();
       if (state.program?.meta?.rehabTemplate) {
-        state.ui.activePhaseId = 0;
+        state.ui.activePhaseId = 1;
       }
       state.program.archiveId = entry.id || null;
       state.program.pasientNavn = entry.patientName || state.program.pasientNavn || "";

@@ -201,7 +201,8 @@
             ? `${progressionCriteria.length} valgt`
             : "Velg kriterier";
 
-        const showProgressionInstructions = Boolean(state.program?.meta?.rehabTemplate);
+        const rehabMode = Boolean(state.program?.meta?.rehabTemplate);
+        const showProgressionInstructions = !rehabMode;
         const renderSelectedAltCard = ({ alt, altIndex }) => {
           const altDetailsOpen =
             state.ui.altDetailsOpen?.[instans.ovelseInstansId]?.[altIndex] || false;
@@ -214,7 +215,14 @@
           const altThumbUrl = altVideoFilename
             ? videoAssetUrl(`${altThumbBase}.jpg`)
             : "";
-          const retningLabel = alt.retning === "progresjon" ? "Progresjon" : "Regresjon";
+          const retningLabel =
+            alt.retning === "progresjon"
+              ? rehabMode
+                ? "Neste nivå:"
+                : "Progresjon"
+              : rehabMode
+                ? "Hvis for tungt:"
+                : "Regresjon";
           const criteriaLabel =
             alt.retning === "progresjon"
               ? "Progresjonskriterier"
@@ -351,8 +359,8 @@
                     : ""
                 }
                 <div class="inline-actions">
-                  <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon">+ Progresjon</button>
-                  <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon">− Regresjon</button>
+                  <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="progresjon">+ Legg til progresjonsøvelse</button>
+                  <button class="inline-btn" data-action="toggle-alt" data-instans-id="${instans.ovelseInstansId}" data-retning="regresjon">+ Legg til regresjonsøvelse</button>
                 </div>
               </div>
             </div>
@@ -1202,14 +1210,15 @@
       : null;
     const activeSectionId =
       activeSection?.seksjonId || state.ui.activeSectionId || "";
-    const activePhaseId =
-      Number.isFinite(state.ui.activePhaseId) ? state.ui.activePhaseId : 0;
+    const activePhaseId = Number.isFinite(state.ui.activePhaseId)
+      ? state.ui.activePhaseId
+      : phaseSections[0]?.phaseId;
     const showPhaseSwitcher = phaseSections.length > 0;
+    const rehabMode = Boolean(state.program?.meta?.rehabTemplate);
     const activePhase =
       phaseSections.find((phase) => phase.phaseId === activePhaseId) ||
       phaseSections[0] ||
       null;
-    const activePhaseLabel = activePhase?.seksjon?.tittel || `Fase ${activePhaseId}`;
     const sectionsToRender = showPhaseSwitcher
       ? phaseSections.filter((phase) => phase.phaseId === activePhaseId)
       : exerciseSections.map((seksjon) => ({ seksjon }));
@@ -1227,7 +1236,7 @@
               ${isActive ? `<span class="tag">Aktiv</span>` : ""}
             </button>
           </div>
-          ${showPhaseSwitcher ? renderPhaseHeader(seksjon) : ""}
+          ${showPhaseSwitcher && !rehabMode ? renderPhaseHeader(seksjon) : ""}
           <div class="section-body exercise-list">
             ${renderProgramItems(seksjon)}
           </div>
@@ -1259,7 +1268,6 @@
           showPhaseSwitcher
             ? `
         <div class="phase-switcher">
-          <div class="phase-switcher-label">Aktiv: ${activePhaseLabel}</div>
           <div class="phase-switcher-actions">
             ${phaseSections
               .map(
@@ -1271,14 +1279,18 @@
               )
               .join("")}
           </div>
-          <div class="phase-switcher-actions">
+          ${
+            rehabMode
+              ? ""
+              : `<div class="phase-switcher-actions">
             <button class="action-btn" data-action="add-phase">+ Ny fase</button>
             ${
               activePhase?.seksjon
                 ? `<button class="action-btn" data-action="remove-phase" data-section-id="${activePhase.seksjon.seksjonId}">Fjern fase</button>`
                 : ""
             }
-          </div>
+          </div>`
+          }
         </div>
         `
             : ""

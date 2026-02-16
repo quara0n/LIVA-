@@ -307,10 +307,21 @@ const CHILD_SEPARATOR = "----------------------------------------";
 const CHILD_INDENT = "  ";
 
 export function buildPdfModel(program) {
-  const seksjoner = (program?.seksjoner || []).filter((s) => s.aktiv);
+  const rehabMode = Boolean(program?.meta?.rehabTemplate);
+  const seksjoner = (program?.seksjoner || [])
+    .filter((s) => s.aktiv)
+    .filter((s) => {
+      if (!rehabMode || s.type === "notater") return true;
+      const phaseId = Number(s.phaseId);
+      if (Number.isFinite(phaseId)) {
+        return phaseId >= 1 && phaseId <= 3;
+      }
+      return !/^Fase\s*0$/i.test(String(s.tittel || "").trim());
+    });
   return {
     tittel: program?.tittel || "Program",
     status: program?.status || "utkast",
+    rehabMode,
     seksjoner: seksjoner.map((s) => ({
       tittel: s.tittel,
       type: s.type,
@@ -346,7 +357,7 @@ function buildNarBrukesText(alt) {
   return narBrukes || "";
 }
 
-function buildExerciseBlock(ovelse) {
+function buildExerciseBlock(ovelse, rehabMode = false) {
   const lines = [];
   const utforelseText = ovelse.utforelse || "";
   const wrappedUtf = wrapLine(utforelseText, LINE_MAX - 2);
@@ -360,8 +371,14 @@ function buildExerciseBlock(ovelse) {
   const alternativer = ovelse.alternativer || [];
   if (alternativer.length) {
     const grupper = [
-      { label: "Progresjon", items: alternativer.filter((alt) => alt.retning === "progresjon") },
-      { label: "Regresjon", items: alternativer.filter((alt) => alt.retning === "regresjon") },
+      {
+        label: rehabMode ? "Neste nivå:" : "Progresjon",
+        items: alternativer.filter((alt) => alt.retning === "progresjon"),
+      },
+      {
+        label: rehabMode ? "Hvis for tungt:" : "Regresjon",
+        items: alternativer.filter((alt) => alt.retning === "regresjon"),
+      },
     ];
 
     for (const gruppe of grupper) {
@@ -370,7 +387,7 @@ function buildExerciseBlock(ovelse) {
         const childIcon = alt.ikon || ovelse.ikon;
         const narBrukesText = buildNarBrukesText(alt);
         const altText = alt.utforelse || narBrukesText;
-        if (narBrukesText) {
+        if (!rehabMode && narBrukesText) {
           lines.push(`${CHILD_INDENT}${gruppe.label}: ${narBrukesText}`);
         } else {
           lines.push(`${CHILD_INDENT}${gruppe.label}`);
@@ -404,6 +421,14 @@ function buildExerciseBlock(ovelse) {
   return { lines, minLines };
 }
 
+function buildSectionHeaderBlock(title) {
+  const lines = [];
+  lines.push(String(title || "Fase"));
+  lines.push(BLOCK_SEPARATOR);
+  lines.push("");
+  return { lines, minLines: lines.length };
+}
+
 function buildNotaterBlock(seksjon) {
   const lines = [];
   if (!seksjon?.seksjonNotat) return { lines, minLines: 0 };
@@ -425,9 +450,12 @@ function buildPages(model) {
       if (notatBlock.lines.length) blocks.push(notatBlock);
       continue;
     }
+    if (model.rehabMode) {
+      blocks.push(buildSectionHeaderBlock(seksjon.tittel));
+    }
 
     for (const ovelse of seksjon.ovelser) {
-      blocks.push(buildExerciseBlock(ovelse));
+      blocks.push(buildExerciseBlock(ovelse, model.rehabMode));
     }
   }
 

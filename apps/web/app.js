@@ -42,20 +42,6 @@ function buildRehabProgramPayload({
     },
     sections: [
       {
-        title: "Fase 0",
-        phaseGoal: "Dempe smerte og etablere trygg belastning.",
-        phaseFocusBullets: ["Kontrollert tempo", "Tåle lett belastning"],
-        phaseProgressionRule: "24t-respons uten forverring",
-        phaseClinicianNote: "",
-        exercises: [
-          {
-            name: "Isometrisk tåhev",
-            execution: "Hold topposisjon i rolig tempo.",
-            dosage: { reps: 5, sett: 3 },
-          },
-        ],
-      },
-      {
         title: "Fase 1",
         phaseGoal: "Bygge grunnstyrke i sene.",
         phaseFocusBullets: ["Toleranse for økt volum"],
@@ -310,7 +296,7 @@ async function loadSeeds() {
     draft?.seksjoner?.some((seksjon) => Number.isFinite(seksjon.phaseId)) ||
     draft?.seksjoner?.some((seksjon) => /^Fase\s*\d+/i.test(seksjon.tittel || ""));
   state.ui.activePhaseId =
-    draft?.meta?.rehabTemplate && hasPhases ? 0 : state.ui.activePhaseId;
+    draft?.meta?.rehabTemplate && hasPhases ? 1 : state.ui.activePhaseId;
   state.patientName = draft?.pasientNavn || "";
   state.patientEmail = draft?.pasientEpost || "";
   state.patientPhone = draft?.pasientTelefon || "";

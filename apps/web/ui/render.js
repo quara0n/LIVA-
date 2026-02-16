@@ -202,7 +202,7 @@
             : "Velg kriterier";
 
         const rehabMode = Boolean(state.program?.meta?.rehabTemplate);
-        const showProgressionInstructions = !rehabMode;
+        const showProgressionInstructions = false;
         const renderSelectedAltCard = ({ alt, altIndex }) => {
           const altDetailsOpen =
             state.ui.altDetailsOpen?.[instans.ovelseInstansId]?.[altIndex] || false;

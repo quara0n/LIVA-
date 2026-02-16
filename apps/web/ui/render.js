@@ -1230,12 +1230,16 @@
           : seksjon.seksjonId === activeSectionId;
         return `
         <div class="section rehab-section" data-section-id="${seksjon.seksjonId}">
-          <div class="section-title">
+          ${
+            showPhaseSwitcher
+              ? `<div class="section-title">
             <button class="section-title-btn" data-action="set-active-section" data-section-id="${seksjon.seksjonId}">
               <span>${seksjon.tittel || "Seksjon"}</span>
               ${isActive ? `<span class="tag">Aktiv</span>` : ""}
             </button>
-          </div>
+          </div>`
+              : ""
+          }
           ${showPhaseSwitcher && !rehabMode ? renderPhaseHeader(seksjon) : ""}
           <div class="section-body exercise-list">
             ${renderProgramItems(seksjon)}
